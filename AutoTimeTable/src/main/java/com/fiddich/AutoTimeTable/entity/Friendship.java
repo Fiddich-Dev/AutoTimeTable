@@ -1,12 +1,13 @@
 package com.fiddich.AutoTimeTable.entity;
 
 import jakarta.persistence.*;
-import lombok.Getter;
-import lombok.Setter;
+import lombok.*;
 
 @Entity
 @Getter
-@Setter
+@Builder
+@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@AllArgsConstructor
 public class Friendship {
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,5 +24,17 @@ public class Friendship {
 
     @Enumerated(EnumType.STRING)
     private FriendshipStatus friendshipStatus;
+
+    // 도메인 메서드
+    public void accept() {
+        this.friendshipStatus = FriendshipStatus.ACCEPTED;
+    }
+
+    public void sendFriendshipRequest(Member requester, Member receiver) {
+//        this.requester = requester;
+//        this.receiver = receiver;
+        receiver.getReceivedFriendships().add(this);
+        requester.getRequestFriendships().add(this);
+    }
 
 }

@@ -29,10 +29,6 @@ public class MemberRepository {
                 .getResultList();
     }
 
-    public void saveFriendship(Friendship friendship) {
-        em.persist(friendship);
-    }
-
     public List<Member> findFriendshipRequest(Long memberId) {
         List<Member> requester = em.createQuery("select f.requester from Friendship f where f.receiver.id = :receiverId", Member.class)
                 .setParameter("receiverId", memberId)
@@ -44,4 +40,3 @@ public class MemberRepository {
     }
 
 }
-// 단방향 : 친구관계 테이블에 가서 내 id를 찾아서 값을 회원테이블에서 조회한다
