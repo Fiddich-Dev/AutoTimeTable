@@ -11,11 +11,12 @@ import lombok.Setter;
 @NoArgsConstructor
 public class Lecture {
 
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "lecture_id")
     private Long id;
 
     private String code;
+    private String codeSection;
     private String name;
     private String professor;
     private String type;
@@ -26,8 +27,9 @@ public class Lecture {
     private String notice;
     private String department;
 
-    public Lecture(String code, String name, String professor, String type, String time, String place, String credit, String target, String notice, String department) {
+    public Lecture(String code, String codeSection, String name, String professor, String type, String time, String place, String credit, String target, String notice, String department) {
         this.code = code;
+        this.codeSection = codeSection;
         this.name = name;
         this.professor = professor;
         this.type = type;
@@ -44,6 +46,7 @@ public class Lecture {
         return "Lecture{" +
                 "id=" + id +
                 ", code='" + code + '\'' +
+                ", codeSection='" + codeSection + '\'' +
                 ", name='" + name + '\'' +
                 ", professor='" + professor + '\'' +
                 ", type='" + type + '\'' +

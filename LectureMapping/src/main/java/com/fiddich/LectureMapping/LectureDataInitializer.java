@@ -39,7 +39,10 @@ public class LectureDataInitializer {
                 System.out.println(lecture);
             }
         }
-        
+
     }
 }
+
+
+
 

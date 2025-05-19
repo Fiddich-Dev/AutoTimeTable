@@ -1,4 +1,4 @@
-package com.fiddich.LectureMapping;
+package com.fiddich.LectureMapping.nouse;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
