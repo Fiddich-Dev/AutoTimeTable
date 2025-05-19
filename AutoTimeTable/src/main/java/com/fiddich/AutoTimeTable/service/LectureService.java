@@ -31,7 +31,7 @@ public class LectureService {
         }
     }
 
-
+    // 꼭들어야하는 강의는 미리 넣어 놓기
     public List<List<Lecture>> createTimetable() {
 
         // 교양 강의 가져오기
@@ -47,6 +47,19 @@ public class LectureService {
 
         return ret;
     }
+
+//     code가 안겹치는지
+//     시간이 안겹치는지
+//    private boolean isValid() {
+//
+//    }
+//
+//    // 사용자가 정한 기준에 부합하는지
+//    // 안듣고 싶은 과목은 없는지
+//    // 전공, 교양 학점은 맞는지
+//    private boolean check() {
+//
+//    }
 
 
 
