@@ -2,20 +2,20 @@ package com.fiddich.LectureMapping;
 
 public class LectureParser {
 
-    public static CultureLecture parseLecture(String input) {
-        CultureLecture cultureLecture = new CultureLecture();
+    public static Lecture parseLecture(String input) {
+        Lecture lecture = new Lecture();
 
-        cultureLecture.setCode(extractValue(input, "code"));
-        cultureLecture.setName(extractValue(input, "name"));
-        cultureLecture.setProfessor(extractValue(input, "professor")) ;
-        cultureLecture.setType(extractValue(input, "type"));
-        cultureLecture.setTime(extractValue(input, "time"));
-        cultureLecture.setPlace(extractValue(input, "place"));
-        cultureLecture.setCredit(extractValue(input, "credit"));
-        cultureLecture.setTarget(extractValue(input, "target"));
-        cultureLecture.setNotice(extractValue(input, "notice"));
+        lecture.setCode(extractValue(input, "code"));
+        lecture.setName(extractValue(input, "name"));
+        lecture.setProfessor(extractValue(input, "professor")) ;
+        lecture.setType(extractValue(input, "type"));
+        lecture.setTime(extractValue(input, "time"));
+        lecture.setPlace(extractValue(input, "place"));
+        lecture.setCredit(extractValue(input, "credit"));
+        lecture.setTarget(extractValue(input, "target"));
+        lecture.setNotice(extractValue(input, "notice"));
 
-        return cultureLecture;
+        return lecture;
     }
 
     private static String extractValue(String input, String key) {
