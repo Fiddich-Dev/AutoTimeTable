@@ -11,10 +11,16 @@ public class Lecture {
 
     private String code;
     private String codeSection;
-    private String lectName;
+    private String name;
     private String professor;
-    private String lectTime;
-    private String cmpDiv;
+    private String type;
+    private String time;
+    private String place;
     private String credit;
+    private String target;
+    private String notice;
+
+    @Enumerated(EnumType.STRING)
+    private Department department;
 
 }
