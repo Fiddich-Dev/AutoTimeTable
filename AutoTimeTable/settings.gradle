@@ -1,1 +1,8 @@
-rootProject.name = 'AutoTimeTable'
+rootProject.name = 'AutoTimetable'
+
+include 'api'
+//include "core"
+include 'core:core-infra-security'
+include 'core:core-infra-redis'
+include 'core:core-infra-domain'
+include 'core:core-infra-db'
