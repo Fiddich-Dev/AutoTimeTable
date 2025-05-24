@@ -57,11 +57,12 @@ public class JWTUtil {
 
 
     // 카테고리, 학번, 권한, 유효기간으로 토큰을 생성
-    public String createJwt(String category, Long id, String studentId, String role, Long expiredMs) {
+    public String createJwt(String category, Long id, String studentId, String school, String role, Long expiredMs) {
 
         return Jwts.builder()
                 .claim("id", id) // 페이로드에 Key, Value로 데이터를 넣음
                 .claim("studentId", studentId)
+                .claim("school", school)
                 .claim("category", category)
                 .claim("role", role)
                 .issuedAt(new Date(System.currentTimeMillis())) // 토큰 생성시간 정보

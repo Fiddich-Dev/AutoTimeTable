@@ -60,12 +60,14 @@ public class JWTFilter extends OncePerRequestFilter {
         // 권한은 앞에 "ROLE_" 붙여줘야함
         Long id = jwtUtil.getId(accessToken);
         String studentId = jwtUtil.getStudentId(accessToken);
+        String school = jwtUtil.getSchool(accessToken);
         String role = "ROLE_" + jwtUtil.getRole(accessToken);
 
         // 컨텍스트 홀더에 저장될 객체 생성
         Member member = Member.builder()
                 .id(id)
                 .studentId(studentId)
+                .school(school)
                 .role(role)
                 .build();
         CustomUserDetails customUserDetails = new CustomUserDetails(member);

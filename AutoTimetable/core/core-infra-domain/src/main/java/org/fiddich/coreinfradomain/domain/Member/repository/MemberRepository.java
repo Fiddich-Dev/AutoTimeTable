@@ -1,14 +1,17 @@
 package org.fiddich.coreinfradomain.domain.Member.repository;
 
+import lombok.extern.slf4j.Slf4j;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
+@Slf4j
 @Repository
 @RequiredArgsConstructor
 public class MemberRepository {
@@ -23,10 +26,17 @@ public class MemberRepository {
         return em.find(Member.class, id);
     }
 
-    public Optional<Member> findByStudentId(String studentId) {
-        Member member = em.find(Member.class, studentId);
-        return Optional.ofNullable(member);
+
+    public Optional<Member> findByStudentIdAndSchool(String studentId, String school) {
+
+        List<Member> members = em.createQuery("select m from Member m where m.studentId = :studentId and m.school = :school", Member.class)
+                .setParameter("studentId", studentId)
+                .setParameter("school", school)
+                .getResultList();
+
+        return members.stream().findFirst();
     }
+
 
     public List<Member> findAll() {
         return em.createQuery("select m from Member m", Member.class)

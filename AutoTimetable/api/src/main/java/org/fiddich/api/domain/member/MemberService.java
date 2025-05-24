@@ -1,5 +1,7 @@
 package org.fiddich.api.domain.member;
 
+import lombok.extern.slf4j.Slf4j;
+import org.fiddich.coreinfradomain.domain.Member.SchoolNameConverter;
 import org.fiddich.coreinfradomain.domain.friendship.Friendship;
 import org.fiddich.coreinfradomain.domain.friendship.FriendshipStatus;
 import org.fiddich.coreinfradomain.domain.Member.Member;
@@ -7,12 +9,16 @@ import org.fiddich.coreinfradomain.domain.friendship.repository.FriendshipReposi
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.fiddich.coreinfraredis.util.RedisUtil;
+import org.fiddich.coreinfrasecurity.user.CustomUserDetails;
 import org.springframework.dao.DuplicateKeyException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 
+@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -21,26 +27,27 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final FriendshipRepository friendshipRepository;
     private final RedisUtil redisUtil;
+    private final BCryptPasswordEncoder bCryptPasswordEncoder;
 
     public Long join(JoinDto joinDto) {
 
         // 학번이 안겹치는지 확인하는 로직
-        if(memberRepository.findByStudentId(joinDto.getStudentId()).isPresent()) {
-            throw new DuplicateKeyException("이미 존재하는 학번입니다");
+        if(memberRepository.findByStudentIdAndSchool(joinDto.getStudentId(), joinDto.getSchool()).isPresent()) {
+            throw new DuplicateKeyException("이미 존재하는 회원입니다");
         }
 
         Member member = Member.builder()
                 .studentId(joinDto.getStudentId())
-                        .username(joinDto.getName())
+                .password(bCryptPasswordEncoder.encode(joinDto.getPassword()))
+                        .username(joinDto.getUsername())
                                 .school(joinDto.getSchool())
                                         .department(joinDto.getDepartment())
                                                 .build();
 
-
-
         memberRepository.save(member);
         return member.getId();
     }
+
 
     public Member findById(Long id) {
         return memberRepository.findById(id);
@@ -54,10 +61,17 @@ public class MemberService {
         return memberRepository.findFriendshipRequest(id);
     }
 
-    public void withdrawal(Long id) {
-        findById(id);
+    public void withdrawal() {
+         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         // redis에서 studentId + ":refreshToken" 키 삭제
-        redisUtil.deleteKey(id + ":refreshToken");
+        String studentId = customUserDetails.getStudentId();
+        String school = customUserDetails.getSchool();
+        Long id = customUserDetails.getId();
+        log.info("탈퇴 요청 PK: {}", id);
+        log.info("school = {}", school);
+        log.info("studentId = {}", studentId);
+
+        redisUtil.deleteKey(SchoolNameConverter.convertToEng(school) + ":" + studentId + ":refreshToken");
         memberRepository.deleteById(id);
     }
 

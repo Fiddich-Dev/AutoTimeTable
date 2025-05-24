@@ -36,7 +36,6 @@ public class CustomLogoutFilter extends GenericFilterBean {
     }
 
     private void doFilter(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain) throws IOException, ServletException {
-        log.info("doFilter()");
         // logout요청이 들어오면
         String requestUri = request.getRequestURI();
         if (!requestUri.matches("^\\/logout$")) {
@@ -50,8 +49,11 @@ public class CustomLogoutFilter extends GenericFilterBean {
             return;
         }
 
+        log.info("로그아웃 요청임");
+
         // 헤더에서 "refresh"로 리프레쉬 토큰 가져오기
         String refresh = request.getHeader("refresh");
+
         // refresh토큰을 못가져오면 400에러
         if (refresh == null) {
             // HTTP 응답을 즉시 클라이언트에게 전송
@@ -89,7 +91,7 @@ public class CustomLogoutFilter extends GenericFilterBean {
         Boolean isExist = refreshTokens.contains(refresh);
         // 없으면 400에러
         if(!isExist) {
-            HttpResponseUtil.setErrorResponse(response, HttpStatus.UNAUTHORIZED, ApiResponse.onFailure(HttpStatus.BAD_REQUEST.name(), "redis에 일치하는 refresh토큰이 없음"));
+            HttpResponseUtil.setErrorResponse(response, HttpStatus.UNAUTHORIZED, ApiResponse.onFailure(HttpStatus.UNAUTHORIZED.name(), "redis에 일치하는 refresh토큰이 없음"));
             return;
         }
 

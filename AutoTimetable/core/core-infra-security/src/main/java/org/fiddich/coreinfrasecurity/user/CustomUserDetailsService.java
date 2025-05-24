@@ -17,18 +17,25 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     private final MemberRepository memberRepository;
 
+    // 학번:학교 구조로 받기
     @Override
-    public UserDetails loadUserByUsername(String studentId) throws UsernameNotFoundException {
+    public UserDetails loadUserByUsername(String studentIdAndSchool) throws UsernameNotFoundException {
+
+        String[] info = studentIdAndSchool.split(":");
+        if(info.length != 2) {
+            throw new UsernameNotFoundException("잘못된 형식입니다.");
+        }
+
+        String studentId = info[0];
+        String school = info[1];
+
         //DB에서 조회
-        Member member = memberRepository.findByStudentId(studentId).orElseThrow(() -> new UsernameNotFoundException("해당회원 없음 " + studentId));
+        Member member = memberRepository.findByStudentIdAndSchool(studentId, school).orElseThrow(() -> new UsernameNotFoundException("해당회원 없음 " + studentId));
 
         log.info("user role = {}", member.getRole());
 
-        if (member != null) {
-            //UserDetails에 담아서 return하면 AutneticationManager가 검증 함
-            return new CustomUserDetails(member);
-        }
-        return null;
+        return new CustomUserDetails(member);
     }
+
 
 }

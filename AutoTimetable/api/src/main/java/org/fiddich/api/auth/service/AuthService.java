@@ -30,6 +30,7 @@ public class AuthService {
         String studentId = jwtUtil.getStudentId(refreshToken);
         Long id = jwtUtil.getId(refreshToken);
         String role = jwtUtil.getRole(refreshToken);
+        String school = jwtUtil.getSchool(refreshToken);
 
         // 토큰이 redis에 있는지 확인
         List<String> refreshTokens = redisUtil.findAllValues(studentId + ":refreshToken", 0, -1)
@@ -44,8 +45,8 @@ public class AuthService {
         }
 
         // 새로운 access, refresh 토큰 재발급
-        String newAccessToken = jwtUtil.createJwt("access", id, studentId, role, 600000L);
-        String newRefreshToken = jwtUtil.createJwt("refresh", id, studentId, role, 86400000L);
+        String newAccessToken = jwtUtil.createJwt("access", id, studentId, school, role, 600000L);
+        String newRefreshToken = jwtUtil.createJwt("refresh", id, studentId, school, role, 86400000L);
 
         // redis 리이슈 하는데 사용한 refresh토큰 삭제
         // 새로 받은 refresh 토큰 redis에 저장
