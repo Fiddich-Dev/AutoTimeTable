@@ -59,7 +59,7 @@ public class SecurityConfig {
 
         //경로별 인가 작업
         http.authorizeHttpRequests((auth) -> auth
-                .requestMatchers("/login", "/", "/join", "/reissue", "/h2-console/**").permitAll() // 인증 안받아도 되는 요청
+                .requestMatchers("/login", "/", "/join", "/reissue", "/h2-console/**", "/checkDuplicatedMember").permitAll() // 인증 안받아도 되는 요청
                 .requestMatchers("/admin").hasAuthority("ADMIN") // 권한과 인증이 필요한 요청
                 .anyRequest().authenticated()); // 인증이 필요한 요청
 

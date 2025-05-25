@@ -48,6 +48,13 @@ public class MemberService {
         return member.getId();
     }
 
+    public boolean isDuplicatedMember(MemberIdentifierDto memberIdentifierDto) {
+        if(memberRepository.findByStudentIdAndSchool(memberIdentifierDto.getStudentId(), memberIdentifierDto.getSchool()).isPresent()) {
+            return true;
+        }
+        return false;
+    }
+
 
     public Member findById(Long id) {
         return memberRepository.findById(id);
