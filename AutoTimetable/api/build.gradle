@@ -1,0 +1,25 @@
+
+dependencies {
+    implementation project(':core:core-infra-security')
+    implementation project(':core:core-infra-redis')
+    implementation project(':core:core-infra-domain')
+    implementation project(':core:core-infra-db')
+
+    implementation 'org.springframework.boot:spring-boot-starter-web'
+    implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+    implementation 'org.springframework.boot:spring-boot-starter-security'
+
+    testImplementation 'org.springframework.boot:spring-boot-starter-test'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+
+    implementation 'com.h2database:h2'
+    runtimeOnly 'com.h2database:h2'
+
+}
+
+//tasks.named('test') {
+//    useJUnitPlatform()
+//}
+
+bootJar { enabled = true }
+jar { enabled = false }
