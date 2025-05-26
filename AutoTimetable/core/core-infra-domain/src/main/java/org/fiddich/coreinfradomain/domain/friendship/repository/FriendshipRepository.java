@@ -9,6 +9,7 @@ import org.fiddich.coreinfradomain.domain.friendship.Friendship;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 @RequiredArgsConstructor
@@ -17,11 +18,14 @@ public class FriendshipRepository {
 
     private final EntityManager em;
 
-    public Friendship findByRequesterAndReceiver(Member requester, Member receiver) {
-        return em.createQuery("select f from Friendship f where f.requester = :requester and f.receiver = :receiver", Friendship.class)
-                .setParameter("requester", requester)
-                .setParameter("receiver", receiver)
-                .getSingleResult();
+    // 친구 요청 중복 확인
+    public Optional<Friendship> findByRequesterAndReceiver(Long requesterId, Long receiverId) {
+        List<Friendship> friendships = em.createQuery("select f from Friendship f where f.requester.id = :requesterId and f.receiver.id = :receiverId", Friendship.class)
+                .setParameter("requesterId", requesterId)
+                .setParameter("receiverId", receiverId)
+                .getResultList();
+
+        return friendships.stream().findFirst();
     }
 
     // 친구요청 보내기

@@ -2,8 +2,7 @@ package org.fiddich.api.domain.member.controller;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.fiddich.api.domain.member.JoinDto;
-import org.fiddich.api.domain.member.MemberIdentifierDto;
+import org.fiddich.api.domain.member.dto.*;
 import org.fiddich.api.domain.member.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
@@ -37,5 +36,32 @@ public class MemberController {
         }
         return ApiResponse.onSuccess(null);
     }
+
+    @PostMapping("/friend/sendFriendRequest")
+    public ApiResponse<Void> sendFriendRequest(@RequestBody RequestFriendshipDto requestFriendshipDto) {
+        log.info("sendFriendRequest");
+        memberService.sendFriendRequest(requestFriendshipDto);
+        return ApiResponse.onSuccess(null);
+    }
+
+    @PostMapping("/friend/acceptFriendRequest")
+    public ApiResponse<Void> acceptFriendRequest(@RequestBody ReceiveFriendshipDto receiveFriendshipDto) {
+        log.info("acceptFriendRequest");
+        memberService.acceptFriendRequest(receiveFriendshipDto);
+        return ApiResponse.onSuccess(null);
+    }
+
+    @DeleteMapping("/friend/rejectFriendRequest")
+    public ApiResponse<Void> rejectFriendRequest(@RequestParam Long requesterId) {
+        log.info("rejectFriendRequest");
+        memberService.rejectFriendRequest(requesterId);
+        return ApiResponse.onSuccess(null);
+    }
+
+//    @GetMapping("/friend/getMyFriends")
+//    public ApiResponse<FriendDto[]> getMyFriends() {
+//        log.info("getMyFriends");
+//        FriendDto[] friendDtos = memberService.
+//    }
 
 }

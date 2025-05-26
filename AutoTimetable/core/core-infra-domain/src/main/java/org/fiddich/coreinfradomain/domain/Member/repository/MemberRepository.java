@@ -4,6 +4,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.fiddich.coreinfradomain.domain.friendship.Friendship;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 
@@ -22,8 +23,9 @@ public class MemberRepository {
         em.persist(member);
     }
 
-    public Member findById(Long id) {
-        return em.find(Member.class, id);
+    public Optional<Member> findById(Long id) {
+        Member member = em.find(Member.class, id);
+        return Optional.ofNullable(member);
     }
 
 

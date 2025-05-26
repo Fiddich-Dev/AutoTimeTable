@@ -1,6 +1,10 @@
 package org.fiddich.api.domain.member;
 
 import lombok.extern.slf4j.Slf4j;
+import org.fiddich.api.domain.member.dto.ReceiveFriendshipDto;
+import org.fiddich.api.domain.member.dto.RequestFriendshipDto;
+import org.fiddich.api.domain.member.dto.JoinDto;
+import org.fiddich.api.domain.member.dto.MemberIdentifierDto;
 import org.fiddich.coreinfradomain.domain.Member.SchoolNameConverter;
 import org.fiddich.coreinfradomain.domain.friendship.Friendship;
 import org.fiddich.coreinfradomain.domain.friendship.FriendshipStatus;
@@ -17,6 +21,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.NoSuchElementException;
+import java.util.Optional;
 
 @Slf4j
 @Service
@@ -56,9 +62,9 @@ public class MemberService {
     }
 
 
-    public Member findById(Long id) {
-        return memberRepository.findById(id);
-    }
+//    public Member findById(Long id) {
+//        return memberRepository.findById(id);
+//    }
 
     public List<Member> findAll() {
         return memberRepository.findAll();
@@ -83,7 +89,15 @@ public class MemberService {
     }
 
     // 친구 요청 보내기
-    public void sendFriendRequest(Member requester, Member receiver) {
+    public void sendFriendRequest(RequestFriendshipDto requestFriendshipDto) {
+
+        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Member requester = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        Member receiver = memberRepository.findById(requestFriendshipDto.getReceiverId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+
+        if(friendshipRepository.findByRequesterAndReceiver(requester.getId(), receiver.getId()).isPresent()) {
+            throw new DuplicateKeyException("이미 친구 요청된 상태입니다.");
+        }
 
         Friendship friendship = Friendship.builder()
                 .friendshipStatus(FriendshipStatus.PENDING)
@@ -97,15 +111,29 @@ public class MemberService {
     }
 
     // 친구요청 수락
-    public void acceptFriendRequest(Member requester, Member receiver) {
+    public void acceptFriendRequest(ReceiveFriendshipDto receiveFriendshipDto) {
 
-        Friendship friendship = friendshipRepository.findByRequesterAndReceiver(requester, receiver);
+        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Member receiver = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        Member requester = memberRepository.findById(receiveFriendshipDto.getRequesterId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+
+        Friendship friendship = friendshipRepository.findByRequesterAndReceiver(requester.getId(), receiver.getId()).orElseThrow(() -> new NoSuchElementException("해당 요청이 유효하지 않습니다."));
+
+        if(friendship.getFriendshipStatus() == FriendshipStatus.ACCEPTED) {
+            throw new DuplicateKeyException("이미 수락된 요청입니다.");
+        }
+
         friendshipRepository.acceptFriendRequest(friendship);
     }
 
     // 친구요청 거절
-    public void rejectFriendRequest(Member requester, Member receiver) {
-        Friendship friendship = friendshipRepository.findByRequesterAndReceiver(requester, receiver);
+    public void rejectFriendRequest(Long requesterId) {
+        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Member receiver = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        Member requester = memberRepository.findById(requesterId).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+
+        Friendship friendship = friendshipRepository.findByRequesterAndReceiver(requester.getId(), receiver.getId()).orElseThrow(() -> new NoSuchElementException("해당 요청이 유효하지 않습니다."));
+
         friendshipRepository.rejectFriendRequest(friendship);
     }
 
