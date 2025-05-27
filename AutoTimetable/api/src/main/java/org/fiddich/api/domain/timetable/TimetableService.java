@@ -18,20 +18,20 @@ public class TimetableService {
     private final TimetableRepository timetableRepository;
     private final MemberRepository memberRepository;
 
-    public Long save(Long memberId, Timetable timetable) {
-        Member member = memberRepository.findById(memberId);
-        timetable.setMember(member);
-        timetableRepository.save(timetable);
-        return timetable.getId();
-    }
+//    public Long save(Long memberId, Timetable timetable) {
+//        Member member = memberRepository.findById(memberId);
+//        timetable.setMember(member);
+//        timetableRepository.save(timetable);
+//        return timetable.getId();
+//    }
 
-    public Timetable findRepresentTimetable(Long memberId) {
-        List<Timetable> timetables = findAllTimetable(memberId);
-        // null이 나올수도 있음 고쳐야함
-        return timetables.stream().filter(t -> t.getIsRepresent()).findFirst().get();
-    }
+//    public Timetable findRepresentTimetable(Long memberId) {
+//        List<Timetable> timetables = findAllTimetable(memberId);
+//        // null이 나올수도 있음 고쳐야함
+//        return timetables.stream().filter(t -> t.getIsRepresent()).findFirst().get();
+//    }
 
-    public List<Timetable> findAllTimetable(Long memberId) {
-        return memberRepository.findById(memberId).getTimetables();
-    }
+//    public List<Timetable> findAllTimetable(Long memberId) {
+//        return memberRepository.findById(memberId).getTimetables();
+//    }
 }

@@ -2,13 +2,14 @@ package org.fiddich.api.domain.member.controller;
 
 
 import lombok.extern.slf4j.Slf4j;
-import org.fiddich.api.domain.member.JoinDto;
-import org.fiddich.api.domain.member.MemberIdentifierDto;
+import org.fiddich.api.domain.member.dto.*;
 import org.fiddich.api.domain.member.MemberService;
 import lombok.RequiredArgsConstructor;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @Slf4j
 @RestController
@@ -36,6 +37,48 @@ public class MemberController {
             return ApiResponse.onFailure(HttpStatus.CONFLICT.name(), "이미 존재하는 회원입니다");
         }
         return ApiResponse.onSuccess(null);
+    }
+
+    @PostMapping("/friend/sendFriendRequest")
+    public ApiResponse<Void> sendFriendRequest(@RequestBody RequestFriendshipDto requestFriendshipDto) {
+        log.info("sendFriendRequest");
+        memberService.sendFriendRequest(requestFriendshipDto);
+        return ApiResponse.onSuccess(null);
+    }
+
+    @PostMapping("/friend/acceptFriendRequest")
+    public ApiResponse<Void> acceptFriendRequest(@RequestBody ReceiveFriendshipDto receiveFriendshipDto) {
+        log.info("acceptFriendRequest");
+        memberService.acceptFriendRequest(receiveFriendshipDto);
+        return ApiResponse.onSuccess(null);
+    }
+
+    @DeleteMapping("/friend/rejectFriendRequest")
+    public ApiResponse<Void> rejectFriendRequest(@RequestParam Long requesterId) {
+        log.info("rejectFriendRequest");
+        memberService.rejectFriendRequest(requesterId);
+        return ApiResponse.onSuccess(null);
+    }
+
+    @GetMapping("/friend/getMyFriends")
+    public ApiResponse<List<FriendDto>> getMyFriends() {
+        log.info("getMyFriends");
+        List<FriendDto> friendDtos = memberService.findAllFriends();
+        return ApiResponse.onSuccess(friendDtos);
+    }
+
+    @GetMapping("/friend/findPendingResponse")
+    public ApiResponse<List<FriendDto>> findPendingResponse() {
+        log.info("findPendingResponse");
+        List<FriendDto> friendDtos = memberService.findPendingResponse();
+        return ApiResponse.onSuccess(friendDtos);
+    }
+
+    @GetMapping("/friend/findPendingRequest")
+    public ApiResponse<List<FriendDto>> findPendingRequest() {
+        log.info("findPendingRequest");
+        List<FriendDto> friendDtos = memberService.findPendingRequest();
+        return ApiResponse.onSuccess(friendDtos);
     }
 
 }

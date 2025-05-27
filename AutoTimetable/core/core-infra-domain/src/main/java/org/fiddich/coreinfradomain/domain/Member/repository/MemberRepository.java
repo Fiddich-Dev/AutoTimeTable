@@ -4,6 +4,8 @@ import lombok.extern.slf4j.Slf4j;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.fiddich.coreinfradomain.domain.friendship.Friendship;
+import org.fiddich.coreinfradomain.domain.friendship.FriendshipStatus;
 import org.springframework.dao.DuplicateKeyException;
 import org.springframework.stereotype.Repository;
 
@@ -22,8 +24,9 @@ public class MemberRepository {
         em.persist(member);
     }
 
-    public Member findById(Long id) {
-        return em.find(Member.class, id);
+    public Optional<Member> findById(Long id) {
+        Member member = em.find(Member.class, id);
+        return Optional.ofNullable(member);
     }
 
 
@@ -58,6 +61,25 @@ public class MemberRepository {
         List<Member> ret = new ArrayList<>();
         ret.addAll(requester);
         return ret;
+    }
+
+    // 내 id가 보낸사람과 받는 사람에 있는 친구들 중 accept상태인 사람들
+    public List<Member> findAllFriends(Long id) {
+        // 내가 보낸 요청중 수락된거
+        List<Member> requestFriends = em.createQuery("select f.requester from Friendship f where f.requester.id = :requesterId and f.friendshipStatus = :status", Member.class)
+                .setParameter("requesterId", id)
+                .setParameter("status", FriendshipStatus.ACCEPTED)
+                .getResultList();
+        // 내가 받은 요청중 수락된거
+        List<Member> receivedFriends = em.createQuery("select f.requester from Friendship f where f.requester.id = :requesterId and f.friendshipStatus = :status", Member.class)
+                .setParameter("requesterId", id)
+                .setParameter("status", FriendshipStatus.ACCEPTED)
+                .getResultList();
+
+        List<Member> allFriends = new ArrayList<>();
+        allFriends.addAll(requestFriends);
+        allFriends.addAll(receivedFriends);
+        return allFriends;
     }
 
 }

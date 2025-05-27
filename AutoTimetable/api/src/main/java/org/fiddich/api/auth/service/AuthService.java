@@ -1,6 +1,7 @@
 package org.fiddich.api.auth.service;
 
 import lombok.RequiredArgsConstructor;
+import org.fiddich.coreinfradomain.domain.Member.SchoolNameConverter;
 import org.fiddich.coreinfraredis.util.RedisUtil;
 import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;
 import org.fiddich.coreinfrasecurity.jwt.util.JWTUtil;
@@ -33,7 +34,7 @@ public class AuthService {
         String school = jwtUtil.getSchool(refreshToken);
 
         // 토큰이 redis에 있는지 확인
-        List<String> refreshTokens = redisUtil.findAllValues(studentId + ":refreshToken", 0, -1)
+        List<String> refreshTokens = redisUtil.findAllValues(SchoolNameConverter.convertToEng(school) + ":" + studentId + ":refreshToken", 0, -1)
                 .stream()
                 .filter(Objects::nonNull)
                 .map(Object::toString)
@@ -41,7 +42,7 @@ public class AuthService {
 
         Boolean isExist = refreshTokens.contains(refreshToken);
         if (!isExist) {
-            throw new NoSuchElementException("Refresh token not found");
+            throw new NoSuchElementException("리프레시 토큰이 만료되었습니다. 다시 로그인 해주세요.");
         }
 
         // 새로운 access, refresh 토큰 재발급
@@ -51,9 +52,9 @@ public class AuthService {
         // redis 리이슈 하는데 사용한 refresh토큰 삭제
         // 새로 받은 refresh 토큰 redis에 저장
         // 만료기간 7일로 갱신
-        redisUtil.deleteOneValue(studentId + ":refreshToken", refreshToken);
-        redisUtil.addOneValue(studentId + ":refreshToken", newRefreshToken);
-        redisUtil.updateExpirationTime(studentId + ":refreshToken", 7L, TimeUnit.DAYS);
+        redisUtil.deleteOneValue(SchoolNameConverter.convertToEng(school) + ":" + studentId + ":refreshToken", refreshToken);
+        redisUtil.addOneValue(SchoolNameConverter.convertToEng(school) + ":" + studentId + ":refreshToken", newRefreshToken);
+        redisUtil.updateExpirationTime(SchoolNameConverter.convertToEng(school) + ":" + studentId + ":refreshToken", 7L, TimeUnit.DAYS);
 
         return new JWTDto(newAccessToken, newRefreshToken);
     }
