@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.fiddich.coreinfradomain.domain.friendship.Friendship;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
@@ -65,6 +66,43 @@ public class FriendshipRepository {
                 .setParameter("requester", requester)
                 .setParameter("status", FriendshipStatus.PENDING)
                 .getResultList();
+    }
+
+    // 내 id가 보낸사람과 받는 사람에 있는 친구들 중 accept상태인 사람들
+    public List<Member> findAllFriends(Long id) {
+        // 내가 보낸 요청중 수락된거
+        List<Member> requestFriends = em.createQuery("select f.receiver from Friendship f where f.requester.id = :requesterId and f.friendshipStatus = :status", Member.class)
+                .setParameter("requesterId", id)
+                .setParameter("status", FriendshipStatus.ACCEPTED)
+                .getResultList();
+        // 내가 받은 요청중 수락된거
+        List<Member> receivedFriends = em.createQuery("select f.requester from Friendship f where f.receiver.id = :receiverId and f.friendshipStatus = :status", Member.class)
+                .setParameter("receiverId", id)
+                .setParameter("status", FriendshipStatus.ACCEPTED)
+                .getResultList();
+
+        List<Member> allFriends = new ArrayList<>();
+        allFriends.addAll(requestFriends);
+        allFriends.addAll(receivedFriends);
+        return allFriends;
+    }
+
+    // 받은 요청중 보류중인거
+    public List<Member> findPendingResponse(Long receiverId) {
+        List<Member> receivedFriends = em.createQuery("select f.requester from Friendship f where f.receiver.id = :receiverId and f.friendshipStatus = :status", Member.class)
+                .setParameter("receiverId", receiverId)
+                .setParameter("status", FriendshipStatus.PENDING)
+                .getResultList();
+        return receivedFriends;
+    }
+
+    // 보낸 요청중 보류중인거
+    public List<Member> findPendingRequest(Long requesterId) {
+        List<Member> requestFriends = em.createQuery("select f.receiver from Friendship f where f.requester.id = :requesterId and f.friendshipStatus = :status", Member.class)
+                .setParameter("requesterId", requesterId)
+                .setParameter("status", FriendshipStatus.PENDING)
+                .getResultList();
+        return requestFriends;
     }
 
 }

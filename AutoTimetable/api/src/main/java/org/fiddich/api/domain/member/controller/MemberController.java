@@ -9,6 +9,8 @@ import org.fiddich.coreinfradomain.domain.common.ApiResponse;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @Slf4j
 @RestController
 @RequiredArgsConstructor
@@ -58,10 +60,25 @@ public class MemberController {
         return ApiResponse.onSuccess(null);
     }
 
-//    @GetMapping("/friend/getMyFriends")
-//    public ApiResponse<FriendDto[]> getMyFriends() {
-//        log.info("getMyFriends");
-//        FriendDto[] friendDtos = memberService.
-//    }
+    @GetMapping("/friend/getMyFriends")
+    public ApiResponse<List<FriendDto>> getMyFriends() {
+        log.info("getMyFriends");
+        List<FriendDto> friendDtos = memberService.findAllFriends();
+        return ApiResponse.onSuccess(friendDtos);
+    }
+
+    @GetMapping("/friend/findPendingResponse")
+    public ApiResponse<List<FriendDto>> findPendingResponse() {
+        log.info("findPendingResponse");
+        List<FriendDto> friendDtos = memberService.findPendingResponse();
+        return ApiResponse.onSuccess(friendDtos);
+    }
+
+    @GetMapping("/friend/findPendingRequest")
+    public ApiResponse<List<FriendDto>> findPendingRequest() {
+        log.info("findPendingRequest");
+        List<FriendDto> friendDtos = memberService.findPendingRequest();
+        return ApiResponse.onSuccess(friendDtos);
+    }
 
 }
