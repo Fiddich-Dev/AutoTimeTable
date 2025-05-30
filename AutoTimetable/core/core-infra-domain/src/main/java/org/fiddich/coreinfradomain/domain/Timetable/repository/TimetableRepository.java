@@ -29,4 +29,26 @@ public class TimetableRepository {
                 .getResultList();
     }
 
+    public List<Timetable> findByMember(Long memberId) {
+        return em.createQuery("select distinct t from Timetable t where t.member.id = :memberId", Timetable.class)
+                .setParameter("memberId", memberId)
+                .getResultList();
+
+    }
+
+    public List<Timetable> findTimetablesWithLecturesByMemberId(Long memberId) {
+
+        String jpql = """
+        SELECT DISTINCT t
+        FROM Timetable t
+        LEFT JOIN FETCH t.timetableLectures
+        WHERE t.member.id = :memberId
+    """;
+
+        return em.createQuery(jpql, Timetable.class)
+                .setParameter("memberId", memberId)
+                .getResultList();
+    }
+
+
 }
