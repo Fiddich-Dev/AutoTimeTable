@@ -3,6 +3,7 @@ package org.fiddich.api.domain.timetable.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.fiddich.api.domain.timetable.dto.LectureDto;
 import org.fiddich.api.domain.timetable.dto.TimeTableDto2;
 import org.fiddich.api.domain.timetable.dto.TimetableDto;
 import org.fiddich.api.domain.timetable.TimetableService;
@@ -62,6 +63,20 @@ public class TimetableController {
                 .post(); // ← 여기 수정
 
         return doc.outerHtml();
+    }
+
+    @PutMapping("/timetable/edit/{timetableId}")
+    public ApiResponse<Void> editTimetable(@PathVariable Long timetableId, @RequestBody LectureDto lectureDto) {
+        log.info("editTimetable");
+        timetableService.editTimetable(timetableId, lectureDto);
+        return ApiResponse.onSuccess(null);
+    }
+
+    @DeleteMapping("/timetable/delete/{timetableId}")
+    public ApiResponse<Void> deleteTimetable(@PathVariable Long timetableId) {
+        log.info("deleteTimetable");
+        timetableService.deleteTimetable(timetableId);
+        return ApiResponse.onSuccess(null);
     }
 
 

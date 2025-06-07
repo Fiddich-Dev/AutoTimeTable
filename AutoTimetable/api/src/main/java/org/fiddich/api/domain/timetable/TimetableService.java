@@ -1,9 +1,7 @@
 package org.fiddich.api.domain.timetable;
 
-import org.fiddich.api.domain.timetable.dto.TimeTableDto2;
-import org.fiddich.api.domain.timetable.dto.TimetableDto;
-import org.fiddich.api.domain.timetable.dto.TimetableLectureDto;
-import org.fiddich.api.domain.timetable.dto.YearAndSemesterDto;
+import jakarta.persistence.EntityNotFoundException;
+import org.fiddich.api.domain.timetable.dto.*;
 import org.fiddich.coreinfradomain.TimetableLecture;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 import org.fiddich.coreinfradomain.domain.Lecture.repository.LectureRepository;
@@ -16,8 +14,10 @@ import org.fiddich.coreinfrasecurity.user.CustomUserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.DeleteMapping;
 
 import java.sql.Time;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.stream.Collectors;
@@ -88,6 +88,33 @@ public class TimetableService {
                 .toList();
 
     }
+
+    public void editTimetable(Long timetableId, LectureDto lectureDto) {
+
+        Timetable timetable = timetableRepository.findById(timetableId)
+                .orElseThrow(() -> new NoSuchElementException("시간표를 찾을 수 없습니다."));
+
+        timetable.getTimetableLectures().clear();
+
+        List<Lecture> lectures = new ArrayList<>();
+
+        List<Long> lectureIds = lectureDto.getLectureIds();
+
+        for(Long lectureId : lectureIds) {
+            Lecture lecture = lectureRepository.findById(lectureId).orElseThrow(() -> new NoSuchElementException("강의 찾을 수 없음"));
+            TimetableLecture timetableLecture = new TimetableLecture();
+            timetableLecture.setTimetable(timetable);
+            timetableLecture.setLecture(lecture);
+            timetable.getTimetableLectures().add(timetableLecture);
+        }
+
+    }
+
+    public void deleteTimetable(Long timetableId) {
+        timetableRepository.deleteTimetable(timetableId);
+    }
+
+
 
 
 //    public Timetable findRepresentTimetable(Long memberId) {

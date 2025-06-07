@@ -33,7 +33,7 @@ public class Timetable {
     private Boolean isRepresent;
 
     @Builder.Default
-    @OneToMany(mappedBy = "timetable", cascade = CascadeType.ALL)
+    @OneToMany(mappedBy = "timetable", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<TimetableLecture> timetableLectures = new ArrayList<>();
 
     // member객체를 넣고 그 member의 시간표에 추가한다

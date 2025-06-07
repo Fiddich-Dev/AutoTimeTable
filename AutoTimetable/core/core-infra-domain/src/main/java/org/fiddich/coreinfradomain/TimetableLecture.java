@@ -34,4 +34,7 @@ public class TimetableLecture {
         // ❌ timetable.getTimetableLectures().add(this); <- 이거 절대 넣지 마세요!
     }
 
+    public void setLecture(Lecture lecture) {
+        this.lecture = lecture;
+    }
 }
