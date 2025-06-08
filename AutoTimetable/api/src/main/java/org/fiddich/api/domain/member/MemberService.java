@@ -109,6 +109,8 @@ public class MemberService {
                 .receiver(receiver)
                 .build();
 
+        System.out.println("reqeuster " + requester.getId() + " : " + "receiver " + receiver.getId());
+
         friendship.sendFriendshipRequest(requester, receiver);
 
         friendshipRepository.saveFriendship(friendship);

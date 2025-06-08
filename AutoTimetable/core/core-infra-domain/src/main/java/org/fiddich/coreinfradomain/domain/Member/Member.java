@@ -42,7 +42,6 @@ public class Member {
 
     // 편의 메서드
     public List<Member> getFriends() {
-
         return this.receivedFriendships.stream()
                 .filter(f -> f.getFriendshipStatus() == FriendshipStatus.ACCEPTED)
                 .map(Friendship::getRequester)
@@ -50,14 +49,11 @@ public class Member {
     }
 
     public List<Member> getPendingFriends() {
-        List<Member> pendingFriends = new ArrayList<>();
 
-        this.receivedFriendships.stream()
+        return this.receivedFriendships.stream()
                 .filter(f -> f.getFriendshipStatus() == FriendshipStatus.PENDING)
-                .map(f -> f.getReceiver())
-                .forEach(m -> pendingFriends.add(m));
-
-        return pendingFriends;
+                .map(Friendship::getRequester)
+                .toList();
     }
 
     public void setPassword(String password) {

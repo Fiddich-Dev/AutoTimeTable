@@ -1,8 +1,10 @@
 package org.fiddich.api.domain.member.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Getter;
 
 @Getter
+@AllArgsConstructor
 public class JoinDto {
 
     private String studentId;
