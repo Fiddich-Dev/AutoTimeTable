@@ -1,14 +1,18 @@
-package org.fiddich.coreinfradomain.domain.Lecture;
+package org.fiddich.api.domain.timetable.dto;
 
-import jakarta.persistence.*;
+
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.fiddich.coreinfradomain.domain.Lecture.Department;
+
+import java.util.List;
 
 @Getter
-@Entity
-public class Lecture {
+@AllArgsConstructor
+public class TimetableLectureDto {
 
-    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "lecture_id")
     private Long id;
 
     private String code;
@@ -22,7 +26,6 @@ public class Lecture {
     private String target;
     private String notice;
 
-    @Enumerated(EnumType.STRING)
     private Department department;
 
 }

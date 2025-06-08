@@ -17,6 +17,10 @@ public class RedisUtil {
         redisTemplate.opsForValue().set(key, value, time, timeUnit);
     }
 
+    public String getValue(String key) {
+        return String.valueOf(redisTemplate.opsForValue().get(key));
+    }
+
     public List<Object> findAllValues(String key, int start, int end) {
         return redisTemplate.opsForList().range(key, start, end);
     }

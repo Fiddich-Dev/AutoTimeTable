@@ -1,15 +1,20 @@
 package org.fiddich.api.auth.service;
 
+import jakarta.mail.MessagingException;
+import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.fiddich.coreinfradomain.domain.Member.SchoolNameConverter;
 import org.fiddich.coreinfraredis.util.RedisUtil;
 import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;
 import org.fiddich.coreinfrasecurity.jwt.util.JWTUtil;
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -19,6 +24,7 @@ public class AuthService {
 
     private final JWTUtil jwtUtil;
     private final RedisUtil redisUtil;
+    private final JavaMailSender mailSender;
 
 
     public JWTDto reissueProcess(String refreshToken) {
@@ -57,5 +63,40 @@ public class AuthService {
         redisUtil.updateExpirationTime(SchoolNameConverter.convertToEng(school) + ":" + studentId + ":refreshToken", 7L, TimeUnit.DAYS);
 
         return new JWTDto(newAccessToken, newRefreshToken);
+    }
+
+    public void sendAuthCode(String email) {
+        String authCode = generateAuthCode();
+        try {
+            MimeMessage message = mailSender.createMimeMessage();
+            MimeMessageHelper helper = new MimeMessageHelper(message, false, "UTF-8");
+
+            helper.setTo(email);
+            System.out.println(email);
+            helper.setSubject("이메일 인증 코드");
+            helper.setText("<h3>인증 코드: <strong>" + authCode + "</strong></h3>", true); // HTML 형식
+
+            mailSender.send(message);
+            // redis에 저장
+            redisUtil.saveAsValue(email, authCode, 5L, TimeUnit.MINUTES);
+        } catch (MessagingException e) {
+            throw new RuntimeException("이메일 전송 실패", e);
+        }
+    }
+
+    public boolean verifyAuthCode(String email, String authCode) {
+        if(authCode.equals(redisUtil.getValue(email))) {
+            redisUtil.deleteKey(email);
+            return true;
+        }
+        return false;
+    }
+
+
+    // 인증번호 생성 메소드
+    public String generateAuthCode() {
+        Random random = new Random();
+        int authCode = 100000 + random.nextInt(900000); // 6자리 난수 생성
+        return String.valueOf(authCode);
     }
 }

@@ -60,4 +60,7 @@ public class Member {
         return pendingFriends;
     }
 
+    public void setPassword(String password) {
+        this.password = password;
+    }
 }

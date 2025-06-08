@@ -15,6 +15,12 @@ dependencies {
     implementation 'com.h2database:h2'
     runtimeOnly 'com.h2database:h2'
 
+    implementation 'org.jsoup:jsoup:1.17.2'
+    implementation group: 'com.squareup.okhttp', name: 'okhttp', version: '2.7.5'
+    implementation 'com.google.code.gson:gson:2.10.1'
+
+    implementation 'org.springframework.boot:spring-boot-starter-mail'
+
 }
 
 //tasks.named('test') {

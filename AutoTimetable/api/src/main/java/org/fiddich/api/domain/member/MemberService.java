@@ -1,5 +1,7 @@
 package org.fiddich.api.domain.member;
 
+import com.google.gson.Gson;
+import com.squareup.okhttp.*;
 import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.domain.member.dto.*;
 import org.fiddich.coreinfradomain.domain.Member.SchoolNameConverter;
@@ -17,6 +19,8 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.nio.charset.StandardCharsets;
+import java.util.Base64;
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Optional;
@@ -174,7 +178,73 @@ public class MemberService {
         return friendshipRepository.findPendingRequest(customUserDetails.getId()).stream().map(FriendDto::memberToFriendDto).collect(Collectors.toList());
     }
 
+    public AuthSchoolResponse authSchool(AuthSchoolDto authSchoolDto) {
 
+        String school = authSchoolDto.getSchool();
+        String id = authSchoolDto.getId();
+        String password = authSchoolDto.getPassword();
+        school = SchoolNameConverter.convertToEng(school);
+        String url = "";
+        String schoolUrl = "";
+
+        switch (school) {
+            case "SKKU":
+                url = "https://login.skku.edu/loginAction";
+                password = Base64.getEncoder().encodeToString(password.getBytes(StandardCharsets.UTF_8));
+                schoolUrl = "https://www.skku.edu/skku/index.do";
+                break;
+
+            default:
+                throw new NoSuchElementException("입력한 학교 없음");
+//                break;
+        }
+
+        try {
+            String postBody = String.format(
+                    "{ \"lang\": \"ko\", \"userid\": \"%s\", \"userpwd\": \"%s\" }",
+                    id, password
+            );
+
+            // OkHttp 객체 생성
+            OkHttpClient client = new OkHttpClient();
+
+            // RequestBody 생성
+            RequestBody requestBody = RequestBody.create(
+                    MediaType.parse("application/json; charset=utf-8"), postBody);
+
+            // Post 객체 생성
+            Request.Builder builder = new Request.Builder().url(url)
+                    .post(requestBody);
+            Request request = builder.build();
+
+            // 요청 전송
+            Response response = client.newCall(request).execute();
+            if (response.isSuccessful()) {
+                // 응답 Body
+                ResponseBody body = response.body();
+                if (body != null) {
+                    String responseBodyStr = body.string();
+                    System.out.println("Response: " + responseBodyStr);
+                    Gson gson = new Gson();
+                    AuthSchoolResponse authSchoolResponse = gson.fromJson(responseBodyStr, AuthSchoolResponse.class);
+
+                    return authSchoolResponse;
+                }
+            } else
+                System.err.println("Error Occurred");
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return null;
+    }
+
+    public void resetPassword(String school, String studentId, String newPassword) {
+        Member member = memberRepository.findByStudentIdAndSchool(studentId, school).orElseThrow(() -> new NoSuchElementException("회원을 찾을수 없음"));
+        String encodedPassword = bCryptPasswordEncoder.encode(newPassword);
+        member.setPassword(encodedPassword);
+    }
 
 
 
