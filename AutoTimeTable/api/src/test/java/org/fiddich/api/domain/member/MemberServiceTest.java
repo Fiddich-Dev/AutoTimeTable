@@ -5,9 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.assertj.core.api.Assertions;
-import org.fiddich.api.domain.member.dto.JoinDto;
-import org.fiddich.api.domain.member.dto.MemberIdentifierDto;
-import org.fiddich.api.domain.member.dto.RequestFriendshipDto;
+import org.fiddich.api.domain.member.dto.*;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.domain.Member.SchoolNameConverter;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
@@ -228,5 +226,155 @@ class MemberServiceTest {
         Assertions.assertThat(isExist).isEqualTo(true);
     }
 
+    @Test
+    void 친구요청수락() {
+
+        // given
+        // 친구요청 보낸 사람
+        Long id = join();
+        saveUserDetails(id);
+
+        // 친구요청 받는 사람
+        Long receiverId = ids.getFirst();
+        RequestFriendshipDto requestFriendshipDto = new RequestFriendshipDto(receiverId);
+        memberService.sendFriendRequest(requestFriendshipDto);
+        SecurityContextHolder.clearContext();
+        saveUserDetails(receiverId);
+
+
+        // when
+        ReceiveFriendshipDto receiveFriendshipDto = new ReceiveFriendshipDto(id);
+        memberService.acceptFriendRequest(receiveFriendshipDto);
+
+        // then
+        Member requester = memberRepository.findById(id).get();
+        List<Member> requesterFriends = requester.getFriends();
+        Member receiver = memberRepository.findById(receiverId).get();
+        List<Member> receiverFriends = receiver.getFriends();
+
+        Assertions.assertThat(requesterFriends.contains(receiver)).isTrue();
+        Assertions.assertThat(receiverFriends.contains(requester)).isTrue();
+
+    }
+
+    @Test
+    void 친구요청거절() {
+
+        // given
+        // 친구요청 보낸 사람
+        Long id = join();
+        saveUserDetails(id);
+
+        // 친구요청 받는 사람
+        Long receiverId = ids.getFirst();
+        RequestFriendshipDto requestFriendshipDto = new RequestFriendshipDto(receiverId);
+        memberService.sendFriendRequest(requestFriendshipDto);
+        SecurityContextHolder.clearContext();
+        saveUserDetails(receiverId);
+
+        // when
+        memberService.rejectFriendRequest(id);
+        // 💡 강제 flush + clear로 DB 동기화
+        // 나중에 다시 공부
+        em.flush();
+        em.clear();
+
+        // then
+        Member requester = memberRepository.findById(id).get();
+        Member receiver = memberRepository.findById(receiverId).get();
+        // 받은 사람의 대기목록
+        List<Member> receiverFriends = receiver.getPendingFriends();
+
+        // 받은 사람의 대기목록에 없어야함
+        Assertions.assertThat(receiverFriends.contains(requester)).isFalse();
+
+    }
+
+    @Test
+    void 친구조회() {
+
+        // given
+        // 친구요청 보낸 사람
+        Long id = join();
+        saveUserDetails(id);
+
+        // 친구요청 받는 사람
+        Long receiverId = ids.getFirst();
+        RequestFriendshipDto requestFriendshipDto = new RequestFriendshipDto(receiverId);
+        memberService.sendFriendRequest(requestFriendshipDto);
+        SecurityContextHolder.clearContext();
+        saveUserDetails(receiverId);
+        ReceiveFriendshipDto receiveFriendshipDto = new ReceiveFriendshipDto(id);
+        memberService.acceptFriendRequest(receiveFriendshipDto);
+
+        // 친구요청 보낸 사람
+        Long requesterId = ids.getLast();
+        RequestFriendshipDto requestFriendshipDto2 = new RequestFriendshipDto(id);
+        SecurityContextHolder.clearContext();
+        saveUserDetails(requesterId);
+        memberService.sendFriendRequest(requestFriendshipDto2);
+
+        SecurityContextHolder.clearContext();
+        saveUserDetails(id);
+        ReceiveFriendshipDto receiveFriendshipDto2 = new ReceiveFriendshipDto(requesterId);
+        memberService.acceptFriendRequest(receiveFriendshipDto2);
+
+        // when
+        // id의 친구들
+        List<FriendDto> friends = memberService.findAllFriends();
+        SecurityContextHolder.clearContext();
+        // receiver의 친구들
+        saveUserDetails(receiverId);
+        List<FriendDto> friends2 = memberService.findAllFriends();
+        SecurityContextHolder.clearContext();
+        // requester의 친구들
+        saveUserDetails(requesterId);
+        List<FriendDto> friends3 = memberService.findAllFriends();
+
+        // then
+        // id의 친구들중에 receiverid, requesterId가 있는지
+        boolean temp1 = friends.stream().map(FriendDto::getId).toList().contains(receiverId);
+        boolean temp2 = friends.stream().map(FriendDto::getId).toList().contains(requesterId);
+        Assertions.assertThat(temp1).isTrue();
+        Assertions.assertThat(temp2).isTrue();
+
+        // receiverid 친구들 중에 id가 있는지
+        boolean temp3 = friends2.stream().map(FriendDto::getId).toList().contains(id);
+        Assertions.assertThat(temp3).isTrue();
+
+        // requesterId 친구들 중에 id가 있는지
+        boolean temp4 = friends3.stream().map(FriendDto::getId).toList().contains(id);
+        Assertions.assertThat(temp4).isTrue();
+    }
+
+    @Test
+    void 보류중인요청조회() {
+
+        // given
+        // 친구요청 보낸 사람
+        Long id = join();
+        saveUserDetails(id);
+
+        // 친구요청 받는 사람
+        Long receiverId = ids.getFirst();
+        RequestFriendshipDto requestFriendshipDto = new RequestFriendshipDto(receiverId);
+        memberService.sendFriendRequest(requestFriendshipDto);
+        // 보낸 요청중 보류중인거
+        boolean temp1 = memberService.findPendingRequest().stream().map(FriendDto::getId).toList().contains(receiverId);
+        Assertions.assertThat(temp1).isTrue();
+        SecurityContextHolder.clearContext();
+        saveUserDetails(receiverId);
+
+        // when
+
+        // then
+
+
+        // 받은 요청중 보류중인거
+        boolean temp2 = memberService.findPendingResponse().stream().map(FriendDto::getId).toList().contains(id);
+        Assertions.assertThat(temp2).isTrue();
+    }
+
+    
 
 }

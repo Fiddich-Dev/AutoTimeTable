@@ -42,10 +42,21 @@ public class Member {
 
     // 편의 메서드
     public List<Member> getFriends() {
-        return this.receivedFriendships.stream()
+        List<Member> received = this.receivedFriendships.stream()
                 .filter(f -> f.getFriendshipStatus() == FriendshipStatus.ACCEPTED)
                 .map(Friendship::getRequester)
                 .toList();
+
+        List<Member> requested = this.requestFriendships.stream()
+                .filter(f -> f.getFriendshipStatus() == FriendshipStatus.ACCEPTED)
+                .map(Friendship::getReceiver)
+                .toList();
+
+        // 두 리스트를 합치기
+        List<Member> friends = new ArrayList<>();
+        friends.addAll(received);
+        friends.addAll(requested);
+        return friends;
     }
 
     public List<Member> getPendingFriends() {
