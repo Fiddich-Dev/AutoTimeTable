@@ -114,4 +114,18 @@ public class MemberController {
         return ApiResponse.onSuccess(null);
     }
 
+    @GetMapping("/friend/searchMemberByStudentId")
+    public ApiResponse<FriendDto> searchMemberByStudentId(@RequestParam String school, @RequestParam String studentId) {
+        log.info("searchMemberByStudentId()");
+        FriendDto friendDto = memberService.searchMemberByStudentId(school, studentId);
+        return ApiResponse.onSuccess(friendDto);
+    }
+
+    @DeleteMapping("/friend/deleteFriend")
+    public ApiResponse<Void> deleteFriend(@RequestParam Long friendId) {
+        log.info("deleteFriend()");
+        memberService.deleteFriend(friendId);
+        return ApiResponse.onSuccess(null);
+    }
+
 }

@@ -248,6 +248,19 @@ public class MemberService {
         member.setPassword(encodedPassword);
     }
 
+    public FriendDto searchMemberByStudentId(String school, String studentId) {
+        Member member = memberRepository.findByStudentIdAndSchool(studentId, school).orElseThrow(() -> new NoSuchElementException("회원을 찾을수 없음"));
+        return new FriendDto(member.getId(), member.getStudentId(), member.getProfileImage(), member.getUsername(), member.getSchool(), member.getDepartment());
+    }
+
+    public void deleteFriend(Long friendId) {
+        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        Member friendToRemove = memberRepository.findById(friendId).orElseThrow(() -> new NoSuchElementException("해당 친구가 존재하지 않습니다."));
+        // friendship에서 me, friend 이거나 friend, me인 경우를 모두 제거한다
+        friendshipRepository.deleteFriend(customUserDetails.getId(), friendId);
+    }
+
 
 
 }

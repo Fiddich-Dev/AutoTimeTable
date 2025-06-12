@@ -65,7 +65,7 @@ public class AuthService {
         return new JWTDto(newAccessToken, newRefreshToken);
     }
 
-    public void sendAuthCode(String email) {
+    public String sendAuthCode(String email) {
         String authCode = generateAuthCode();
         try {
             MimeMessage message = mailSender.createMimeMessage();
@@ -79,6 +79,7 @@ public class AuthService {
             mailSender.send(message);
             // redis에 저장
             redisUtil.saveAsValue(email, authCode, 5L, TimeUnit.MINUTES);
+            return authCode;
         } catch (MessagingException e) {
             throw new RuntimeException("이메일 전송 실패", e);
         }

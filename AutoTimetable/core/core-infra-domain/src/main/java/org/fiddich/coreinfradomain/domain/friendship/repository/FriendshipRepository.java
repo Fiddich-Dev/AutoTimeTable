@@ -105,4 +105,17 @@ public class FriendshipRepository {
         return requestFriends;
     }
 
+    // 친구 삭제
+    public void deleteFriend(Long myId, Long friendId) {
+        em.createQuery("delete from Friendship f where f.receiver.id = :myId and f.requester.id = :friendId")
+                .setParameter("myId", myId)
+                .setParameter("friendId", friendId)
+                .executeUpdate();
+
+        em.createQuery("delete from Friendship f where f.receiver.id = :friendId and f.requester.id = :myId")
+                .setParameter("friendId", friendId)
+                .setParameter("myId", myId)
+                .executeUpdate();
+    }
+
 }

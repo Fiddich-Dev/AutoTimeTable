@@ -375,6 +375,60 @@ class MemberServiceTest {
         Assertions.assertThat(temp2).isTrue();
     }
 
-    
+    @Test
+    void 학교학번으로멤버검색() throws Exception {
+        Long id = join();
+        login();
+        saveUserDetails(id);
+
+        Member otherMember = memberRepository.findById(ids.getFirst()).get();
+        FriendDto friendDto = memberService.searchMemberByStudentId(otherMember.getSchool(), otherMember.getStudentId());
+
+        Assertions.assertThat(friendDto.getId()).isEqualTo(otherMember.getId());
+    }
+
+    @Test
+    @Rollback(value = false)
+    void 친구삭제() {
+        // given
+        // 친구요청 보낸 사람
+        Long id = join();
+        saveUserDetails(id);
+
+        // 친구요청 받는 사람
+        Long receiverId = ids.getFirst();
+        RequestFriendshipDto requestFriendshipDto = new RequestFriendshipDto(receiverId);
+        memberService.sendFriendRequest(requestFriendshipDto);
+        SecurityContextHolder.clearContext();
+        saveUserDetails(receiverId);
+        ReceiveFriendshipDto receiveFriendshipDto = new ReceiveFriendshipDto(id);
+        memberService.acceptFriendRequest(receiveFriendshipDto);
+
+        // 친구요청 보낸 사람
+        Long requesterId = ids.getLast();
+        RequestFriendshipDto requestFriendshipDto2 = new RequestFriendshipDto(id);
+        SecurityContextHolder.clearContext();
+        saveUserDetails(requesterId);
+        memberService.sendFriendRequest(requestFriendshipDto2);
+
+        SecurityContextHolder.clearContext();
+        saveUserDetails(id);
+        ReceiveFriendshipDto receiveFriendshipDto2 = new ReceiveFriendshipDto(requesterId);
+        memberService.acceptFriendRequest(receiveFriendshipDto2);
+
+        memberService.deleteFriend(receiverId);
+        memberService.deleteFriend(requesterId);
+
+        em.flush();
+        em.clear();
+
+        List<Member> myFriends = memberRepository.findById(id).get().getFriends();
+        Member receiver = memberRepository.findById(receiverId).get();
+        Member requester = memberRepository.findById(requesterId).get();
+        Assertions.assertThat(myFriends.contains(receiver)).isFalse();
+        Assertions.assertThat(myFriends.contains(requester)).isFalse();
+
+
+    }
 
 }
