@@ -114,6 +114,10 @@ public class TimetableService {
         timetableRepository.deleteTimetable(timetableId);
     }
 
+    public List<Lecture> getAllLectures() {
+        return lectureRepository.findAll();
+    }
+
 
 
 

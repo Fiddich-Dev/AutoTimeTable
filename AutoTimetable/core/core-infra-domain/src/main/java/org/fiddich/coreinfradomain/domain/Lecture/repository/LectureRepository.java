@@ -26,4 +26,9 @@ public class LectureRepository {
                 .getResultList();
     }
 
+    public List<Lecture> findAll() {
+        return em.createQuery("select l from Lecture l", Lecture.class)
+                .getResultList();
+    }
+
 }

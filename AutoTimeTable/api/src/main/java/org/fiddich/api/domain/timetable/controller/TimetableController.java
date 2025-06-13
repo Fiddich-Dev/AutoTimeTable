@@ -8,6 +8,7 @@ import org.fiddich.api.domain.timetable.dto.TimeTableDto2;
 import org.fiddich.api.domain.timetable.dto.TimetableDto;
 import org.fiddich.api.domain.timetable.TimetableService;
 import org.fiddich.api.domain.timetable.dto.YearAndSemesterDto;
+import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 import org.fiddich.coreinfradomain.domain.Timetable.Timetable;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
 import org.jsoup.Connection;
@@ -78,6 +79,13 @@ public class TimetableController {
         timetableService.deleteTimetable(timetableId);
         return ApiResponse.onSuccess(null);
     }
+
+    @GetMapping("/getAllLectures")
+    public ApiResponse<List<Lecture>> getAllLectures() {
+        log.info("getAllLectures");
+        return ApiResponse.onSuccess(timetableService.getAllLectures());
+    }
+
 
 
 
