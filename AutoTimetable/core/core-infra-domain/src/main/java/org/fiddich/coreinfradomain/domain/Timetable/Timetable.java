@@ -24,7 +24,6 @@ public class Timetable {
     @JoinColumn(name = "member_id")
     private Member member;
 
-//    private String semesterYear;
     @Column(name = "year_col")
     private String year;
 
@@ -39,7 +38,7 @@ public class Timetable {
     // member객체를 넣고 그 member의 시간표에 추가한다
     public void setMember(Member member) {
         this.member = member;
-        member.getTimetables().add(this);
+//        member.getTimetables().add(this);
     }
 
     public void setTimetableLectures(List<TimetableLecture> lectures) {
@@ -50,4 +49,7 @@ public class Timetable {
         }
     }
 
+    public void setRepresent(Boolean represent) {
+        isRepresent = represent;
+    }
 }

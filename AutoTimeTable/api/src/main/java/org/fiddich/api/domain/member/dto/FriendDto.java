@@ -13,12 +13,12 @@ public class FriendDto {
     private String studentId;
     private String profileImage;
     private String username;
-    private String school;
+//    private String school;
     private String department;
 
 
     public static FriendDto memberToFriendDto(Member member) {
-        return new FriendDto(member.getId(), member.getStudentId(), member.getProfileImage(), member.getUsername(), member.getSchool(), member.getDepartment());
+        return new FriendDto(member.getId(), member.getStudentId(), member.getProfileImage(), member.getUsername(), member.getDepartment());
     }
 
 }

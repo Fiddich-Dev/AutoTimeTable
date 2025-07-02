@@ -1,7 +1,6 @@
 package org.fiddich.api.domain.lecture;
 
 
-import org.fiddich.coreinfradomain.domain.Lecture.Department;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 import org.fiddich.coreinfradomain.domain.Lecture.repository.LectureRepository;
 import lombok.RequiredArgsConstructor;
@@ -31,22 +30,22 @@ public class LectureService {
         }
     }
 
-    // 꼭들어야하는 강의는 미리 넣어 놓기
-    public List<List<Lecture>> createTimetable() {
-
-        // 교양 강의 가져오기
-        List<Lecture> cultures = lectureRepository.findByDepartment(Department.culture);
-        // 전공 강의들 가져오기
-        List<Lecture> majors = lectureRepository.findByDepartment(Department.classicalChinese);
-
-        // 전공중에 3개 뽑기
-        List<List<Lecture>> ret = new ArrayList<>();
-        combi(cultures, majors, -1, ret, new ArrayList<>());
-
-        System.out.println(ret.size());
-
-        return ret;
-    }
+//    // 꼭들어야하는 강의는 미리 넣어 놓기
+//    public List<List<Lecture>> createTimetable() {
+//
+//        // 교양 강의 가져오기
+//        List<Lecture> cultures = lectureRepository.findByDepartment(Department.culture);
+//        // 전공 강의들 가져오기
+//        List<Lecture> majors = lectureRepository.findByDepartment(Department.classicalChinese);
+//
+//        // 전공중에 3개 뽑기
+//        List<List<Lecture>> ret = new ArrayList<>();
+//        combi(cultures, majors, -1, ret, new ArrayList<>());
+//
+//        System.out.println(ret.size());
+//
+//        return ret;
+//    }
 
 //     code가 안겹치는지
 //     시간이 안겹치는지

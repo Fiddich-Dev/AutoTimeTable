@@ -2,6 +2,7 @@ package org.fiddich.coreinfradomain.domain.Member;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.fiddich.coreinfradomain.domain.Lecture.School;
 import org.fiddich.coreinfradomain.domain.friendship.Friendship;
 import org.fiddich.coreinfradomain.domain.friendship.FriendshipStatus;
 import org.fiddich.coreinfradomain.domain.Timetable.Timetable;
@@ -24,13 +25,19 @@ public class Member {
     private String password;
     private String profileImage;
     private String username;
+
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "school_id")
+//    private School school;
+
     private String school;
+
     private String department;
     private String role;
 
-    @Builder.Default
-    @OneToMany(mappedBy = "member")
-    private List<Timetable> timetables = new ArrayList<>();
+//    @Builder.Default
+//    @OneToMany(mappedBy = "member")
+//    private List<Timetable> timetables = new ArrayList<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "receiver")

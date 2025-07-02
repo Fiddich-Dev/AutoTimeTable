@@ -3,10 +3,12 @@ package org.fiddich.coreinfradomain.domain.Timetable.repository;
 
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
+import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 import org.fiddich.coreinfradomain.domain.Timetable.Timetable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.Time;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,38 +27,70 @@ public class TimetableRepository {
         return Optional.ofNullable(em.find(Timetable.class, id));
     }
 
+    public Optional<Timetable> findByIdWithTimetableLectures(Long id) {
+
+        Timetable timetable = em.createQuery(
+                "select t from Timetable t " +
+                "join fetch t.timetableLectures tl " +
+                "join fetch tl.lecture " +
+                "where t.id = :id", Timetable.class)
+                .setParameter("id", id)
+                .getSingleResult();
+
+        return Optional.ofNullable(timetable);
+    }
+
     public List<Timetable> findAll() {
         return em.createQuery("select t from Timetable t", Timetable.class)
                 .getResultList();
     }
 
     public List<Timetable> findByMember(Long memberId) {
-        return em.createQuery("select distinct t from Timetable t where t.member.id = :memberId", Timetable.class)
+        return em.createQuery("select t from Timetable t where t.member.id = :memberId", Timetable.class)
                 .setParameter("memberId", memberId)
                 .getResultList();
-
     }
 
     public List<Timetable> findTimetablesWithLecturesByMemberId(Long memberId) {
-
         String jpql = """
-        SELECT DISTINCT t
+        SELECT t
         FROM Timetable t
-        LEFT JOIN FETCH t.timetableLectures
+        JOIN FETCH t.timetableLectures tl
+        JOIN FETCH tl.lecture l
+        JOIN FETCH l.category c
         WHERE t.member.id = :memberId
     """;
-
         return em.createQuery(jpql, Timetable.class)
                 .setParameter("memberId", memberId)
                 .getResultList();
     }
 
     public void deleteTimetable(Long timetableId) {
-        Timetable timetable = em.find(Timetable.class, timetableId); // 영속 상태로 만들기
+        Timetable timetable = em.find(Timetable.class, timetableId);
         if (timetable != null) {
-            em.remove(timetable); // 삭제
+            em.remove(timetable);
         }
     }
+
+    public void deleteTimetableLecture(Long timetableId) {
+        em.createQuery("delete from TimetableLecture tl where tl.timetable.id = :timetableId")
+                .setParameter("timetableId", timetableId)
+                .executeUpdate();
+    }
+
+    public void clearMainTimetable(Long memberId) {
+        em.createQuery("update Timetable t set t.isRepresent = false where t.member.id = :memberId")
+                .setParameter("memberId", memberId)
+                .executeUpdate();
+    }
+
+    public void updateMainTimetable(Long timetableId) {
+        em.createQuery("update Timetable t set t.isRepresent = true where t.id = :timetableId")
+                .setParameter("timetableId", timetableId)
+                .executeUpdate();
+    }
+
+
 
 
 }

@@ -5,7 +5,8 @@ import lombok.Getter;
 import java.util.List;
 
 @Getter
-public class LectureDto {
+public class LectureIdsDto {
 
     private List<Long> lectureIds;
+
 }

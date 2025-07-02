@@ -48,7 +48,7 @@ public class MemberService {
                 .studentId(joinDto.getStudentId())
                 .password(bCryptPasswordEncoder.encode(joinDto.getPassword()))
                         .username(joinDto.getUsername())
-                                .school(joinDto.getSchool())
+//                                .school(joinDto.getSchool())
                                         .department(joinDto.getDepartment())
                                                 .build();
 
@@ -75,13 +75,13 @@ public class MemberService {
          CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         // redis에서 studentId + ":refreshToken" 키 삭제
         String studentId = customUserDetails.getStudentId();
-        String school = customUserDetails.getSchool();
+//        String school = customUserDetails.getSchool();
         Long id = customUserDetails.getId();
         log.info("탈퇴 요청 PK: {}", id);
-        log.info("school = {}", school);
+//        log.info("school = {}", school);
         log.info("studentId = {}", studentId);
 
-        redisUtil.deleteKey(SchoolNameConverter.convertToEng(school) + ":" + studentId + ":refreshToken");
+        redisUtil.deleteKey(studentId + ":refreshToken");
         memberRepository.deleteById(id);
     }
 
@@ -250,7 +250,7 @@ public class MemberService {
 
     public FriendDto searchMemberByStudentId(String school, String studentId) {
         Member member = memberRepository.findByStudentIdAndSchool(studentId, school).orElseThrow(() -> new NoSuchElementException("회원을 찾을수 없음"));
-        return new FriendDto(member.getId(), member.getStudentId(), member.getProfileImage(), member.getUsername(), member.getSchool(), member.getDepartment());
+        return new FriendDto(member.getId(), member.getStudentId(), member.getProfileImage(), member.getUsername(), member.getDepartment());
     }
 
     public void deleteFriend(Long friendId) {
