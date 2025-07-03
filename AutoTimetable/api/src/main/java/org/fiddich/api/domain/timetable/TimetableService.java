@@ -35,29 +35,35 @@ public class TimetableService {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member member = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
 
+        String year = createTimetableDto.getYear();
+        String semester = createTimetableDto.getSemester();
+        String timetableName = createTimetableDto.getTimeTableName();
+        boolean isRepresent = createTimetableDto.getIsRepresent();
+        List<Long> lectureIds = createTimetableDto.getSelectedLectureIds();
+        List<Lecture> lectures = lectureRepository.findAllByIds(lectureIds);
+
+
         Timetable timetable = Timetable.builder()
                 .member(member)
-                        .year(createTimetableDto.getYear())
-                                .semester(createTimetableDto.getSemester())
-                .timeTableName(createTimetableDto.getTimeTableName())
-                .isRepresent(createTimetableDto.getIsRepresent())
+                .year(year)
+                .semester(semester)
+                .timeTableName(timetableName)
+                .isRepresent(isRepresent)
                 .build();
 
-        // TimetableLecture 생성
-        List<TimetableLecture> timetableLectures = createTimetableDto.getSelectedLectureIds().stream()
-                .map(lectureId -> {
-                    Lecture lecture = lectureRepository.findById(lectureId)
-                            .orElseThrow(() -> new NoSuchElementException("해당 강의가 존재하지 않습니다."));
-                    return TimetableLecture.builder()
-                            .timetable(timetable)
-                            .lecture(lecture)
-                            .build();
-                }).collect(Collectors.toList());
+        List<TimetableLecture> timetableLectures = new ArrayList<>();
+
+        for(Lecture lecture : lectures) {
+            TimetableLecture timetableLecture = TimetableLecture.builder()
+                    .timetable(timetable)
+                    .lecture(lecture)
+                    .build();
+
+            timetableLectures.add(timetableLecture);
+        }
 
         timetable.setTimetableLectures(timetableLectures); // 연관관계 설정
-
         timetableRepository.save(timetable);
-
         return timetable.getId();
     }
     // 완료

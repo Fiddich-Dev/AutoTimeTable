@@ -41,9 +41,9 @@ public class Timetable {
 //        member.getTimetables().add(this);
     }
 
-    public void setTimetableLectures(List<TimetableLecture> lectures) {
+    public void setTimetableLectures(List<TimetableLecture> timetableLectures) {
         this.timetableLectures.clear(); // 기존 목록 비우기
-        for (TimetableLecture l : lectures) {
+        for (TimetableLecture l : timetableLectures) {
             l.setTimetable(this);       // 역참조만 설정
             this.timetableLectures.add(l); // 새 목록에 추가
         }
