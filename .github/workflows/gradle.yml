@@ -72,5 +72,5 @@ jobs:
           docker rm ${{ secrets.APP_NAME }} || true
           gunzip -f ${{ github.sha }}.tar.gz
           docker load -i ${{ github.sha }}.tar
-          sudo docker-compose -f ./docker-compose.yml up -d
+          docker-compose -f ./docker-compose.yml up -d
           sudo docker rmi $(sudo docker images -f "dangling=true" -q) --force
