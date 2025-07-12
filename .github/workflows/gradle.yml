@@ -24,19 +24,18 @@ jobs:
     - name: Create .env file
       run: |
         cat <<EOF > .env
-        
         DB_URL=${{ secrets.DB_URL }}
         DB_USERNAME=${{ secrets.DB_USERNAME }}
         DB_PASSWORD=${{ secrets.DB_PASSWORD }}
         REDIS_HOST=${{ secrets.REDIS_HOST }}
         REDIS_PORT=${{ secrets.REDIS_PORT }}
-        
         SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
         SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
         SMTP_PORT=${{ secrets.SMTP_PORT }}
         JWT_SECRET=${{ secrets.JWT_SECRET }}
-        
         EOF
+        cat .env
+        
     - name: Build
       run: ./gradlew clean build
 
