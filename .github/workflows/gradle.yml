@@ -60,6 +60,21 @@ jobs:
         key: ${{ secrets.EC2_SSH_KEY }}
         source: "${{ github.sha }}.tar.gz"
         target: "/home/${{ secrets.EC2_USER }}/"
+
+    - name: clean
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
+          # 기존 컨테이너 정리
+          docker stop ${{ secrets.CONTAINER_NAME }} || true
+          docker rm ${{ secrets.CONTAINER_NAME }} || true
+
+          # 기존 이미지 정리
+          docker rmi ${{ secrets.IMAGE_NAME }} || true
+    
     
     - name: SSH into EC2 and run container
       uses: appleboy/ssh-action@v1.0.3
@@ -68,11 +83,6 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # 기존 컨테이너 정리
-          docker stop ${{ secrets.APP_NAME }} || true
-          docker rm ${{ secrets.APP_NAME }} || true
-
-          sleep 10
           
           # 이미지 로드
           gunzip -f ${{ github.sha }}.tar.gz
