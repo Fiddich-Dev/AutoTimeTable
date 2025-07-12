@@ -5,7 +5,7 @@ FROM eclipse-temurin:17-jdk
 WORKDIR /app
 
 # 빌드 결과물 복사 (Gradle 기준)
-ARG JAR_FILE=build/libs/*SNAPSHOT.jar
+ARG JAR_FILE=api/build/libs/*SNAPSHOT.jar
 COPY ${JAR_FILE} app.jar
 
 # 애플리케이션 실행
