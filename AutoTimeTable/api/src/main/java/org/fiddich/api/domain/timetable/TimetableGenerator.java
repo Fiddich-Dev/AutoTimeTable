@@ -1,9 +1,9 @@
 package org.fiddich.api.domain.timetable;
 
+import org.fiddich.api.domain.timetable.dto.CreateTimetableFilteringOptionDto;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 import java.util.stream.Collectors;
 
 public class TimetableGenerator {
@@ -203,8 +203,113 @@ public class TimetableGenerator {
     }
 
 
-
-    public List<List<Lecture>> getMakedTimeTable() {
-        return makedTimeTable;
+    public List<List<Lecture>> getMakedTimeTable(int minCredit, int maxCredit) {
+        return makedTimeTable.stream().filter(t -> {
+            int credit = getTotalCredit(t);
+            return credit >= minCredit && credit <= maxCredit;
+        }).toList();
     }
+
+
+    // 학점 계산
+    int getTotalCredit(List<Lecture> lectures) {
+        int sum = 0;
+        for(Lecture lecture : lectures) {
+            sum += Integer.parseInt(lecture.getCredit());
+        }
+        return sum;
+    }
+
+    // 오전 수업 비율
+    double getMorningRatio(List<Lecture> lectures) {
+        int morningMinutes = 0;
+        int totalMinutes = 0;
+        for (Lecture l : lectures) {
+            for (String time : l.getTime().split(",")) {
+                if(time.isBlank()) continue;
+                String[] parts = time.substring(1).split("-");
+                int start = Integer.parseInt(parts[0]) / 100;
+                int end = Integer.parseInt(parts[1]) / 100;
+                if (start < 12) morningMinutes += (end - start) * 60;
+                totalMinutes += (end - start) * 60;
+            }
+        }
+        return totalMinutes == 0 ? 0 : (double) morningMinutes / totalMinutes;
+    }
+
+    // 요일 수
+    int getSchoolDays(List<Lecture> lectures) {
+        return (int) lectures.stream()
+                .flatMap(l -> List.of(l.getTime().split(",")).stream())
+                .map(s -> s.charAt(0))
+                .distinct()
+                .count();
+    }
+
+    // 1시간 이상의 공강의 수
+    public int countEmptyGapsOverOneHour(List<Lecture> lectures) {
+        // 각 요일별 강의 시간을 나눔
+        Map<Integer, List<int[]>> timeByDay = new HashMap<>();
+
+        for (Lecture lecture : lectures) {
+            String[] times = lecture.getTime().split(",");
+            for (String time : times) {
+                if (time.isBlank()) continue;
+
+                int day = dayToInt(time.charAt(0));
+                String[] startEnd = time.substring(1).split("-");
+
+                int start = parseTimeToMinutes(startEnd[0]);
+                int end = parseTimeToMinutes(startEnd[1]);
+
+                timeByDay.computeIfAbsent(day, k -> new ArrayList<>()).add(new int[]{start, end});
+            }
+        }
+
+        int totalGaps = 0;
+
+        for (List<int[]> intervals : timeByDay.values()) {
+            // 정렬
+            intervals.sort(Comparator.comparingInt(a -> a[0]));
+
+            for (int i = 1; i < intervals.size(); i++) {
+                int prevEnd = intervals.get(i - 1)[1];
+                int currStart = intervals.get(i)[0];
+
+                if (currStart - prevEnd >= 60) {
+                    totalGaps++;
+                }
+            }
+        }
+
+        return totalGaps;
+    }
+
+    private int parseTimeToMinutes(String time) {
+        int hour = Integer.parseInt(time) / 100;
+        int minute = Integer.parseInt(time) % 100;
+        return hour * 60 + minute;
+    }
+
+    public List<List<Lecture>> getFilteredTimeTables(CreateTimetableFilteringOptionDto option) {
+        return makedTimeTable.stream()
+                .filter(t -> {
+                    int credit = getTotalCredit(t);
+                    return credit >= option.getMinCredit() && credit <= option.getMaxCredit();
+                })
+                .sorted((a, b) -> {
+                    // 조건에 따라 정렬 기준을 바꾸자
+                    if (option.isPreferMorning()) {
+                        return Double.compare(getMorningRatio(b), getMorningRatio(a)); // 오전이 더 많은 쪽이 앞으로
+                    } else if (option.isPreferAfternoon()) {
+                        return Double.compare(getMorningRatio(a), getMorningRatio(b)); // 오후가 더 많은 쪽이 앞으로
+                    } else if (option.isMinimizeSchoolDays()) {
+                        return Integer.compare(getSchoolDays(a), getSchoolDays(b)); // 요일 수가 적은 게 먼저
+                    }
+                    return 0;
+                })
+                .collect(Collectors.toList());
+    }
+
+
 }

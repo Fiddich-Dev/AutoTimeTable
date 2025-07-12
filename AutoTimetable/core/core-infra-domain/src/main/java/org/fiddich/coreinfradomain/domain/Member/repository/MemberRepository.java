@@ -1,6 +1,7 @@
 package org.fiddich.coreinfradomain.domain.Member.repository;
 
 import lombok.extern.slf4j.Slf4j;
+import org.fiddich.coreinfradomain.domain.Lecture.School;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
@@ -38,6 +39,21 @@ public class MemberRepository {
                 .getResultList();
 
         return members.stream().findFirst();
+    }
+
+    public Optional<Member> findByStudentId(String studentId) {
+
+        List<Member> members = em.createQuery("select m from Member m where m.studentId = :studentId", Member.class)
+                .setParameter("studentId", studentId)
+                .getResultList();
+
+        return members.stream().findFirst();
+    }
+
+    public List<Member> findByStudentIdContaining(String keyword) {
+        return em.createQuery("select m from Member m where m.studentId like :keyword", Member.class)
+                .setParameter("keyword", "%" + keyword + "%")
+                .getResultList();
     }
 
 
@@ -80,6 +96,12 @@ public class MemberRepository {
         allFriends.addAll(requestFriends);
         allFriends.addAll(receivedFriends);
         return allFriends;
+    }
+
+    public School findSchoolByName(String name) {
+        return em.createQuery("select s from School s where s.name = :name", School.class)
+                .setParameter("name", name)
+                .getSingleResult();
     }
 
 }

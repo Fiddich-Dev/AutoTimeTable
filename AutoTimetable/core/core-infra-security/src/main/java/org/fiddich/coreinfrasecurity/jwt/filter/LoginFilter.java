@@ -6,6 +6,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.fiddich.coreinfradomain.domain.Lecture.School;
 import org.fiddich.coreinfradomain.domain.Member.SchoolNameConverter;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
 import org.fiddich.coreinfraredis.util.RedisUtil;
@@ -47,14 +48,13 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
         try {
             requestBody = getBody(request);
             String studentId = (String)requestBody.get("studentId");
-            String school = (String)requestBody.get("school");
             // 암호화 되기전 비밀번호
             String password = (String)requestBody.get("password");
 
-            log.info("studentId = {}, school = {}, password = {}", studentId, school, password);
+            log.info("studentId = {}, password = {}", studentId, password);
 
             //스프링 시큐리티에서 studentId와 password를 검증하기 위해서는 token에 담아야 함
-            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(studentId + ":" + school, password, null);
+            UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(studentId, password, null);
 
             //token에 담은 검증을 위한 AuthenticationManager로 전달
             return authenticationManager.authenticate(authToken);
@@ -72,18 +72,17 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
 
         // 학번과 권한을 가져온다
         String studentId = customUserDetails.getStudentId();
-        String school = customUserDetails.getSchool();
         Collection<? extends GrantedAuthority> authorities = authentication.getAuthorities();
         String role = authorities.iterator().next().getAuthority();
         Long id = customUserDetails.getId();
 
         // 토큰 생성
-        String access = jwtUtil.createJwt("access", id, studentId, school, role, 600000L);
-        String refresh = jwtUtil.createJwt("refresh", id, studentId, school, role, 86400000L);
+        String access = jwtUtil.createJwt("access", id, studentId, role, 600000L);
+        String refresh = jwtUtil.createJwt("refresh", id, studentId, role, 86400000L);
 
 
         // redis에 refresh토큰만 저장
-        redisUtil.addOneValue( SchoolNameConverter.convertToEng(school) + ":" + studentId + ":refreshToken", refresh);
+        redisUtil.addOneValue( studentId + ":refreshToken", refresh);
         redisUtil.updateExpirationTime(studentId + ":refreshToken", 7L, TimeUnit.DAYS);
 
         JWTDto jwtDto = new JWTDto(access, refresh);

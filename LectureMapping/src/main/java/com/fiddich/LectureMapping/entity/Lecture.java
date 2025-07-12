@@ -30,7 +30,8 @@ public class Lecture {
     private String year;
     private String semester;
     private boolean isCustom;
-    private Long memberId;
+
+//    private Long memberId;
 
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "school_id")

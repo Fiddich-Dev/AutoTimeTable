@@ -30,7 +30,10 @@ public class Member {
 //    @JoinColumn(name = "school_id")
 //    private School school;
 
-    private String school;
+//    private String school;
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Timetable> timetables = new ArrayList<>();
 
     private String department;
     private String role;
@@ -40,11 +43,11 @@ public class Member {
 //    private List<Timetable> timetables = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "receiver")
+    @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Friendship> receivedFriendships = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "requester")
+    @OneToMany(mappedBy = "requester", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Friendship> requestFriendships = new ArrayList<>();
 
     // 편의 메서드

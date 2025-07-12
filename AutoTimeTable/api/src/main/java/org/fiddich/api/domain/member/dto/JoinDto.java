@@ -10,8 +10,6 @@ public class JoinDto {
     private String studentId;
     private String password;
     private String username;
-    private String school;
-    private String department;
 
     @Override
     public String toString() {
@@ -19,8 +17,6 @@ public class JoinDto {
                 "studentId='" + studentId + '\'' +
                 ", password='" + password + '\'' +
                 ", username='" + username + '\'' +
-                ", school='" + school + '\'' +
-                ", department='" + department + '\'' +
                 '}';
     }
 }

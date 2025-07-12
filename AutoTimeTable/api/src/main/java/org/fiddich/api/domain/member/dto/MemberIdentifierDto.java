@@ -7,5 +7,5 @@ import lombok.Getter;
 @AllArgsConstructor
 public class MemberIdentifierDto {
     private String studentId;
-    private String school;
+//    private String school;
 }

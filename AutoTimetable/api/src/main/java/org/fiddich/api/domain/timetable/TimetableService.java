@@ -1,5 +1,6 @@
 package org.fiddich.api.domain.timetable;
 
+import jakarta.persistence.EntityManager;
 import org.fiddich.api.domain.timetable.dto.*;
 import org.fiddich.coreinfradomain.TimetableLecture;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
@@ -19,6 +20,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import java.io.IOException;
+import java.sql.Time;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -30,6 +32,7 @@ public class TimetableService {
     private final TimetableRepository timetableRepository;
     private final MemberRepository memberRepository;
     private final LectureRepository lectureRepository;
+    private final EntityManager em;
 
     public Long save(CreateTimetableDto createTimetableDto) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -41,6 +44,14 @@ public class TimetableService {
         boolean isRepresent = createTimetableDto.getIsRepresent();
         List<Long> lectureIds = createTimetableDto.getSelectedLectureIds();
         List<Lecture> lectures = lectureRepository.findAllByIds(lectureIds);
+
+
+        if(isRepresent) {
+            List<Timetable> timetables = timetableRepository.findByMember(member.getId());
+            for(Timetable timetable : timetables) {
+                timetable.setRepresent(false);
+            }
+        }
 
 
         Timetable timetable = Timetable.builder()
@@ -129,6 +140,7 @@ public class TimetableService {
         return lectureRepository.findAll();
     }
 
+    // 커스텀 강의는 안나와야함
     public List<InternalLectureDto> searchLecturesByKeyword(String keyword) {
         return lectureRepository.searchByAutoField(keyword).stream()
                 .map(InternalLectureDto::new)
@@ -146,7 +158,7 @@ public class TimetableService {
     }
 
     // 테스트 필요
-    public List<List<Lecture>> createTimetable(CreateTimetableOptionDto optionDto) {
+    public List<List<InternalLectureDto>> createTimetable(CreateTimetableOptionDto optionDto) {
         int targetMajorCnt = optionDto.getTargetMajorCnt();
         int targetCultureCnt = optionDto.getTargetCultureCnt();
         List<Long> dislikeLectureCodes = optionDto.getDislikeLectureCode();
@@ -154,10 +166,10 @@ public class TimetableService {
         List<Long> categoryIds = optionDto.getCategoryIds();
         int[][] usedTime = optionDto.getUsedTime();
 
-        // 고른 전공 강의 찾기
+        // 고른 전공들의 강의 찾기
         List<Lecture> lectures = lectureRepository.findAllByCategoryIdsWithParentCategory(categoryIds);
         // 포함시킬 강의들
-        List<Lecture> likeLecture = lectureRepository.findAllByIds(likeLectureCodes);
+        List<Lecture> likeLectures = lectureRepository.findAllByIds(likeLectureCodes);
         // 제외시킬 강의들
         List<Lecture> dislikeLecture = lectureRepository.findAllByIds(dislikeLectureCodes);
 
@@ -165,7 +177,7 @@ public class TimetableService {
         int includedCultureCnt = 0;
 
         // 포함시킬 강의중에 교양이 몇개인지 찾아야함
-        for(Lecture lecture : lectures) {
+        for(Lecture lecture : likeLectures) {
             if(lecture.getCategory().getParent().getName().equals("교양/기타")) {
                 includedCultureCnt++;
             }
@@ -175,9 +187,22 @@ public class TimetableService {
         }
 
         TimetableGenerator timetableGenerator = new TimetableGenerator(lectures);
-        timetableGenerator.create(targetMajorCnt, targetCultureCnt, likeLecture, dislikeLecture, includedMajorCnt, includedCultureCnt, usedTime);
+        timetableGenerator.create(targetMajorCnt, targetCultureCnt, likeLectures, dislikeLecture, includedMajorCnt, includedCultureCnt, usedTime);
 
-        return timetableGenerator.getMakedTimeTable();
+        TimetableScorer scorer = new TimetableScorer(optionDto.isPreferMorning(), optionDto.isPreferAfternoon());
+
+        List<List<Lecture>> sortedTimetable = timetableGenerator.getMakedTimeTable(optionDto.getMinCredit(), optionDto.getMaxCredit()).stream()
+                .sorted(Comparator.comparingInt(scorer::score).reversed()) // 점수 높은 게 좋은 시간표
+                .collect(Collectors.toList());
+
+        return sortedTimetable.stream()
+                .map(innerList ->
+                        innerList.stream()
+                                .map(l -> new InternalLectureDto(l.getId(), l.getCode(), l.getCodeSection(), l.getName(), l.getProfessor(), l.getType(), l.getTime(), l.getCredit(), l.getCategory().getName(), l.getNotice())) // 각 Lecture → InternalLectureDto로 변환
+                                .collect(Collectors.toList())
+                )
+                .collect(Collectors.toList());
+
     }
 
     // 에타 시간표를 내 DB에 저장하기(내 DB에 없는 강의는 강의DB에 먼저 저장하고 저장)
@@ -191,6 +216,13 @@ public class TimetableService {
         String name = createTimetableWithExternalLecturesDto.getTimeTableName();
         boolean isRepresent = createTimetableWithExternalLecturesDto.isRepresent();
 
+        if(isRepresent) {
+            List<Timetable> timetables = timetableRepository.findByMember(member.getId());
+            for(Timetable timetable : timetables) {
+                timetable.setRepresent(false);
+            }
+        }
+
         Timetable timetable = Timetable.builder()
                 .member(member)
                 .year(year)
@@ -198,6 +230,8 @@ public class TimetableService {
                 .timeTableName(name)
                 .isRepresent(isRepresent)
                 .build();
+
+
 
         List<TimetableLecture> timetableLectures = new ArrayList<>();
 
@@ -223,7 +257,7 @@ public class TimetableService {
                         .time(extDto.getTime())
                         .credit(extDto.getCredit())
                         .isCustom(true)
-                        .member(member)
+//                        .member(member)
 //                        .school(member.getSchool())
                         .build();
 
@@ -334,6 +368,115 @@ public class TimetableService {
             System.out.println(lecture.toString());
         }
         return externalLectureDtos;
+    }
+
+    public List<InquiryDepartmentDto> getAllCategories(String year, String semester) {
+        return timetableRepository.findAllCategoryByYearAndSemester(year, semester)
+                .stream()
+                .map(c -> new InquiryDepartmentDto(c.getId(), c.getName()))
+                .toList();
+    }
+
+    // 겹치는 강의만 가져오기
+    public List<CompareTimetableDto> compareTimetable(CompareMemberDto compareMemberDto) {
+        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Long myId = customUserDetails.getId();
+        String year = compareMemberDto.getYear();
+        String semester = compareMemberDto.getSemester();
+
+        // 🔹 내 대표 시간표에서 강의 목록 조회 (JPQL)
+        List<Lecture> myLectures = em.createQuery("""
+        select l from Timetable t
+        join t.timetableLectures tl
+        join tl.lecture l
+        where t.member.id = :memberId
+        and t.isRepresent = true
+        and t.year = :year
+        and t.semester = :semester
+    """, Lecture.class)
+                .setParameter("memberId", myId)
+                .setParameter("year", year)
+                .setParameter("semester", semester)
+                .getResultList();
+
+        // 🔹 결과 초기화
+        List<CompareTimetableDto> result = myLectures.stream()
+                .map(CompareTimetableDto::new)
+                .collect(Collectors.toList());
+
+        // 🔹 친구들 시간표 비교
+        for (Long memberId : compareMemberDto.getMemberIds()) {
+            Member member = em.find(Member.class, memberId);
+            if (member == null) continue;
+
+            // 친구의 대표 시간표 강의 조회
+            List<Lecture> lectures = em.createQuery("""
+            select l from Timetable t
+            join t.timetableLectures tl
+            join tl.lecture l
+            where t.member.id = :memberId
+            and t.isRepresent = true
+            and t.year = :year
+            and t.semester = :semester
+        """, Lecture.class)
+                    .setParameter("memberId", memberId)
+                    .setParameter("year", year)
+                    .setParameter("semester", semester)
+                    .getResultList();
+
+            // 겹치는 강의 처리
+            for (Lecture lecture : lectures) {
+                for (CompareTimetableDto dto : result) {
+                    if (dto.getInternalLectureDto().getId().equals(lecture.getId())) {
+                        dto.getUsernames().add(member.getUsername());
+                        dto.getStudentIds().add(member.getStudentId());
+                        break;
+                    }
+                }
+            }
+        }
+
+        // 🔹 겹치는 강의만 필터링
+        return result.stream()
+                .filter(dto -> !dto.getStudentIds().isEmpty())
+                .collect(Collectors.toList());
+    }
+
+
+    // 모든 강의 중복없이 가져오기
+    public List<InternalLectureDto> compareFreeTime(CompareMemberDto compareMemberDto) {
+        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        String year = compareMemberDto.getYear();
+        String semester = compareMemberDto.getSemester();
+
+        // ✅ 중복 허용을 위해 Set 대신 List 사용
+        List<Lecture> result = new ArrayList<>();
+
+        compareMemberDto.getMemberIds().add(customUserDetails.getId());
+        for (Long memberId : compareMemberDto.getMemberIds()) {
+
+            List<Lecture> lectures = em.createQuery("""
+            select l from Timetable t
+            join t.timetableLectures tl
+            join tl.lecture l
+            where t.member.id = :memberId
+            and t.isRepresent = true
+            and t.year = :year
+            and t.semester = :semester
+        """, Lecture.class)
+                    .setParameter("memberId", memberId)
+                    .setParameter("year", year)
+                    .setParameter("semester", semester)
+                    .getResultList();
+
+            result.addAll(
+                lectures
+            );
+        }
+
+        return result.stream()
+                .map(InternalLectureDto::new)
+                .toList();
     }
 
 }

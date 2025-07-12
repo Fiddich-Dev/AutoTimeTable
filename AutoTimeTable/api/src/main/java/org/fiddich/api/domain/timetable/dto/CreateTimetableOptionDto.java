@@ -16,4 +16,10 @@ public class CreateTimetableOptionDto {
     List<Long> categoryIds;
     int[][] usedTime;
 
+    int minCredit;
+    int maxCredit;
+
+    private boolean preferMorning;
+    private boolean preferAfternoon;
+
 }
