@@ -47,6 +47,11 @@ jobs:
     - name: Build Docker image
       run: |
         # docker build --build-arg SPRING_PROFILE=prod -t ${{ secrets.APP_NAME }} .
+        
+        # Docker Compose 설치
+        sudo curl -L "https://github.com/docker/compose/releases/download/v2.23.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+        sudo chmod +x /usr/local/bin/docker-compose
+        
         docker-compose build ${{ secrets.IMAGE_NAME }}
         
     - name: Save Docker image to archive
