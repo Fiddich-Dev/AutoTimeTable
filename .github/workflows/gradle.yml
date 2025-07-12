@@ -77,9 +77,33 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
+          # 기존 컨테이너 정리
           docker stop ${{ secrets.APP_NAME }} || true
           docker rm ${{ secrets.APP_NAME }} || true
+          
+          # 이미지 로드
           gunzip -f ${{ github.sha }}.tar.gz
           docker load -i ${{ github.sha }}.tar
-          docker-compose -f ./docker-compose.yml up -d
+          
+          # .env 파일 생성 (반드시 추가)
+          cat <<EOF > .env
+          DB_URL=${{ secrets.DB_URL }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          SPRING_PROFILES_ACTIVE=prod
+          EOF
+          
+          # Docker Compose 실행 (로그 출력)
+          docker-compose -f docker-compose.yml up -d
+          
+          # 로그 확인 (30초 후)
+          sleep 30
+          docker ps -a
+          docker logs ${{ secrets.APP_NAME }} --tail 100
           sudo docker rmi $(sudo docker images -f "dangling=true" -q) --force
