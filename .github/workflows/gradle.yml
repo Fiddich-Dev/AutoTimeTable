@@ -61,18 +61,31 @@ jobs:
         source: "${{ github.sha }}.tar.gz"
         target: "/home/${{ secrets.EC2_USER }}/"
 
-    - name: clean
+    - name: stop container
       uses: appleboy/ssh-action@v1.0.3
       with:
         host: ${{ secrets.EC2_HOST }}
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # 기존 컨테이너 정리
           docker stop ${{ secrets.CONTAINER_NAME }} || true
+
+    - name: remove container
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
           docker rm ${{ secrets.CONTAINER_NAME }} || true
 
-          # 기존 이미지 정리
+    - name: remove image
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_SSH_KEY }}
+        script: |
           docker rmi ${{ secrets.IMAGE_NAME }} || true
     
     
