@@ -46,11 +46,12 @@ jobs:
       
     - name: Build Docker image
       run: |
-        docker build --build-arg SPRING_PROFILE=prod -t ${{ secrets.APP_NAME }} .
+        # docker build --build-arg SPRING_PROFILE=prod -t ${{ secrets.APP_NAME }} .
+        docker-compose build ${{ secrets.IMAGE_NAME }}
         
     - name: Save Docker image to archive
       run: |
-        docker save ${{ secrets.APP_NAME }} | gzip > ${GITHUB_SHA}.tar.gz
+        docker save ${{ secrets.IMAGE_NAME }} | gzip > ${GITHUB_SHA}.tar.gz
 
     # GitHub Actions 워크플로우에 추가
     - name: Copy Dockerfile to EC2
@@ -111,7 +112,7 @@ jobs:
           EOF
           
           # Docker Compose 실행 (로그 출력)
-          docker-compose -f docker-compose.yml up -d
+          docker run -d -p 8080:8080 --name ${{ secrets.CONTAINER_NAME }} {{ secrets.IMAGE_NAME }}
           
           # 로그 확인 (30초 후)
           sleep 30
