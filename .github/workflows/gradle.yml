@@ -71,10 +71,13 @@ jobs:
           # 기존 컨테이너 정리
           docker stop ${{ secrets.APP_NAME }} || true
           docker rm ${{ secrets.APP_NAME }} || true
+
+          sleep 10
           
           # 이미지 로드
           gunzip -f ${{ github.sha }}.tar.gz
           docker load -i ${{ github.sha }}.tar
+
           
           # .env 파일 생성 (반드시 추가)
           cat <<EOF > .env
