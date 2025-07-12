@@ -6,10 +6,12 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.auth.dto.AuthCodeVerifyDTO;
+import org.fiddich.api.auth.dto.EmailDto;
 import org.fiddich.api.auth.service.AuthService;
 import org.fiddich.api.domain.member.dto.AuthSchoolDto;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
 import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 
@@ -22,6 +24,12 @@ public class AuthController {
 
     private final AuthService authService;
 
+    @GetMapping("/")
+    public ResponseEntity<String> healthCheck() {
+        log.info("healthCheck");
+        return ResponseEntity.ok("OK");
+    }
+
     @PostMapping("/reissue")
     public ApiResponse<JWTDto> reissue(@RequestHeader("refresh") String refreshToken) {
         log.info("reissue");
@@ -29,18 +37,15 @@ public class AuthController {
     }
 
     @PostMapping("/mail/send")
-    public ApiResponse<Void> sendAuthCode(@RequestBody String email) {
+    public ApiResponse<Void> sendAuthCode(@RequestBody EmailDto emailDto) {
         log.info("sendAuthCode");
-        try {
-            ObjectMapper mapper = new ObjectMapper();
-            Map<String, String> map = mapper.readValue(email, new TypeReference<>() {});
-            email = map.get("email");
-
-            authService.sendAuthCode(email);
-            return ApiResponse.onSuccess(null);
-        } catch (Exception e) {
-            return ApiResponse.onFailure("INVALID_JSON", "요청 형식이 잘못되었습니다.");
-        }
+        authService.sendAuthCode(emailDto);
+        return ApiResponse.onSuccess(null);
+//        try {
+//
+//        } catch (Exception e) {
+//            return ApiResponse.onFailure("INVALID_JSON", "요청 형식이 잘못되었습니다.");
+//        }
     }
 
     @PostMapping("/mail/verify")
@@ -51,7 +56,7 @@ public class AuthController {
             return ApiResponse.onSuccess(null);
         }
         else {
-            return ApiResponse.onFailure("403", "인증실패");
+            return ApiResponse.onFailure("CONFLICT", "인증실패");
         }
     }
 

@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.EnableScheduling;
 @SpringBootApplication(scanBasePackages = {"org.fiddich"})
 public class AutoTimetableApplication {
 
+
 	public static void main(String[] args) {
 		SpringApplication.run(AutoTimetableApplication.class, args);
 	}

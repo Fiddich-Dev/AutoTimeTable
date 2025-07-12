@@ -26,69 +26,41 @@ public class MemberController {
 
     private final MemberService memberService;
 
-
-    @PostMapping("/join")
+    @PostMapping("/members")
     public ApiResponse<Long> join(@RequestBody JoinDto joinDto) {
-        log.info("join");
+        log.info("회원가입");
         return ApiResponse.onSuccess(memberService.join(joinDto));
     }
 
-    @DeleteMapping("/withdrawal")
-    public ApiResponse<Void> withdrawal() {
-        memberService.withdrawal();
-        return ApiResponse.onSuccess(null);
-    }
-
-    @PostMapping("/checkDuplicatedMember")
-    public ApiResponse<Void> checkDuplicatedMember(@RequestBody MemberIdentifierDto memberIdentifierDto) {
-        if(memberService.isDuplicatedMember(memberIdentifierDto)) {
+    @GetMapping("/members/check-duplicate")
+    public ApiResponse<Void> checkDuplicatedMember(@RequestParam String studentId) {
+        log.info("학번 중복체크");
+        if(memberService.isDuplicatedMember(studentId)) {
             return ApiResponse.onFailure(HttpStatus.CONFLICT.name(), "이미 존재하는 회원입니다");
         }
         return ApiResponse.onSuccess(null);
     }
 
-    @PostMapping("/friend/sendFriendRequest")
-    public ApiResponse<Void> sendFriendRequest(@RequestBody RequestFriendshipDto requestFriendshipDto) {
-        log.info("sendFriendRequest");
-        memberService.sendFriendRequest(requestFriendshipDto);
+    @DeleteMapping("/members/me")
+    public ApiResponse<Void> withdrawal() {
+        log.info("회원탈퇴");
+        memberService.withdrawal();
         return ApiResponse.onSuccess(null);
     }
 
-    @PostMapping("/friend/acceptFriendRequest")
-    public ApiResponse<Void> acceptFriendRequest(@RequestBody ReceiveFriendshipDto receiveFriendshipDto) {
-        log.info("acceptFriendRequest");
-        memberService.acceptFriendRequest(receiveFriendshipDto);
+
+
+
+    // 인증 메일은 보낸다
+    // 인증이 되면 비밀번호 재설정 기회는 준다
+    @PatchMapping("/password-reset")
+    public ApiResponse<?> passwordReset(@RequestBody ResetPasswordDto resetPasswordDto) {
+        log.info("passwordReset()");
+        memberService.resetPassword(resetPasswordDto);
         return ApiResponse.onSuccess(null);
     }
 
-    @DeleteMapping("/friend/rejectFriendRequest")
-    public ApiResponse<Void> rejectFriendRequest(@RequestParam Long requesterId) {
-        log.info("rejectFriendRequest");
-        memberService.rejectFriendRequest(requesterId);
-        return ApiResponse.onSuccess(null);
-    }
-
-    @GetMapping("/friend/getMyFriends")
-    public ApiResponse<List<FriendDto>> getMyFriends() {
-        log.info("getMyFriends");
-        List<FriendDto> friendDtos = memberService.findAllFriends();
-        return ApiResponse.onSuccess(friendDtos);
-    }
-
-    @GetMapping("/friend/findPendingResponse")
-    public ApiResponse<List<FriendDto>> findPendingResponse() {
-        log.info("findPendingResponse");
-        List<FriendDto> friendDtos = memberService.findPendingResponse();
-        return ApiResponse.onSuccess(friendDtos);
-    }
-
-    @GetMapping("/friend/findPendingRequest")
-    public ApiResponse<List<FriendDto>> findPendingRequest() {
-        log.info("findPendingRequest");
-        List<FriendDto> friendDtos = memberService.findPendingRequest();
-        return ApiResponse.onSuccess(friendDtos);
-    }
-
+    // 아마 안쓸듯
     @PostMapping("/auth/school")
     public ApiResponse<?> authSchool(@RequestBody AuthSchoolDto authSchoolDto) throws Exception {
         log.info("authSchool");
@@ -104,14 +76,4 @@ public class MemberController {
             return ApiResponse.onFailure("123", "123");
         }
     }
-
-    // 인증 메일은 보낸다
-    // 인증이 되면 비밀번호 재설정 기회는 준다
-    @PostMapping("/password-reset")
-    public ApiResponse<?> passwordReset(@RequestBody ResetPasswordDto resetPasswordDto) {
-        log.info("passwordReset()");
-        memberService.resetPassword(resetPasswordDto.getSchool(), resetPasswordDto.getStudentId(), resetPasswordDto.getNewPassword());
-        return ApiResponse.onSuccess(null);
-    }
-
 }

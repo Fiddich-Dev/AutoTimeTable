@@ -68,7 +68,7 @@ public class JWTFilter extends OncePerRequestFilter {
         Member member = Member.builder()
                 .id(id)
                 .studentId(studentId)
-                .school(school)
+//                .school(school)
                 .role(role)
                 .build();
         CustomUserDetails customUserDetails = new CustomUserDetails(member);

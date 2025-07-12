@@ -2,6 +2,7 @@ package org.fiddich.api.domain.member;
 
 import com.google.gson.Gson;
 import com.squareup.okhttp.*;
+import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.domain.member.dto.*;
 import org.fiddich.coreinfradomain.domain.Member.SchoolNameConverter;
@@ -20,10 +21,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.nio.charset.StandardCharsets;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 @Slf4j
@@ -36,28 +37,29 @@ public class MemberService {
     private final FriendshipRepository friendshipRepository;
     private final RedisUtil redisUtil;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
+    private final EntityManager em;
 
     public Long join(JoinDto joinDto) {
 
-        // 학번이 안겹치는지 확인하는 로직
-        if(memberRepository.findByStudentIdAndSchool(joinDto.getStudentId(), joinDto.getSchool()).isPresent()) {
+//         학번이 안겹치는지 확인하는 로직
+        if(memberRepository.findByStudentId(joinDto.getStudentId()).isPresent()) {
             throw new DuplicateKeyException("이미 존재하는 회원입니다");
         }
+
+//        School school = memberRepository.findSchoolByName(joinDto.getSchool());
 
         Member member = Member.builder()
                 .studentId(joinDto.getStudentId())
                 .password(bCryptPasswordEncoder.encode(joinDto.getPassword()))
                         .username(joinDto.getUsername())
-                                .school(joinDto.getSchool())
-                                        .department(joinDto.getDepartment())
                                                 .build();
 
         memberRepository.save(member);
         return member.getId();
     }
 
-    public boolean isDuplicatedMember(MemberIdentifierDto memberIdentifierDto) {
-        if(memberRepository.findByStudentIdAndSchool(memberIdentifierDto.getStudentId(), memberIdentifierDto.getSchool()).isPresent()) {
+    public boolean isDuplicatedMember(String studentId) {
+        if(memberRepository.findByStudentId(studentId).isPresent()) {
             return true;
         }
         return false;
@@ -75,22 +77,26 @@ public class MemberService {
          CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         // redis에서 studentId + ":refreshToken" 키 삭제
         String studentId = customUserDetails.getStudentId();
-        String school = customUserDetails.getSchool();
+//        String school = customUserDetails.getSchool();
         Long id = customUserDetails.getId();
         log.info("탈퇴 요청 PK: {}", id);
-        log.info("school = {}", school);
+//        log.info("school = {}", school);
         log.info("studentId = {}", studentId);
 
-        redisUtil.deleteKey(SchoolNameConverter.convertToEng(school) + ":" + studentId + ":refreshToken");
+        redisUtil.deleteKey(studentId + ":refreshToken");
+
+
+
+
         memberRepository.deleteById(id);
     }
 
     // 친구 요청 보내기
-    public void sendFriendRequest(RequestFriendshipDto requestFriendshipDto) {
+    public void sendFriendRequest(FriendShipDto requestFriendshipDto) {
 
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member requester = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
-        Member receiver = memberRepository.findById(requestFriendshipDto.getReceiverId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        Member receiver = memberRepository.findById(requestFriendshipDto.getMemberId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
 
         if(friendshipRepository.findByRequesterAndReceiver(requester.getId(), receiver.getId()).isPresent()) {
             throw new DuplicateKeyException("이미 친구 요청된 상태입니다.");
@@ -109,17 +115,19 @@ public class MemberService {
                 .receiver(receiver)
                 .build();
 
+        System.out.println("reqeuster " + requester.getId() + " : " + "receiver " + receiver.getId());
+
         friendship.sendFriendshipRequest(requester, receiver);
 
         friendshipRepository.saveFriendship(friendship);
     }
 
     // 친구요청 수락
-    public void acceptFriendRequest(ReceiveFriendshipDto receiveFriendshipDto) {
+    public void acceptFriendRequest(FriendShipDto receiveFriendshipDto) {
 
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member receiver = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
-        Member requester = memberRepository.findById(receiveFriendshipDto.getRequesterId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        Member requester = memberRepository.findById(receiveFriendshipDto.getMemberId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
 
         Friendship friendship = friendshipRepository.findByRequesterAndReceiver(requester.getId(), receiver.getId()).orElseThrow(() -> new NoSuchElementException("해당 요청이 유효하지 않습니다."));
 
@@ -157,25 +165,25 @@ public class MemberService {
     }
 
     // 내 친구들 조회
-    public List<FriendDto> findAllFriends() {
+    public List<InquiryMemberDto> findAllFriends() {
         log.warn("연관관계 메서드 생각해보기");
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return friendshipRepository.findAllFriends(customUserDetails.getId()).stream().map(FriendDto::memberToFriendDto).collect(Collectors.toList());
+        return friendshipRepository.findAllFriends(customUserDetails.getId()).stream().map(InquiryMemberDto::memberToFriendDto).collect(Collectors.toList());
 //        return memberRepository.findById(customUserDetails.getId()).get().getFriends().stream().map(FriendDto::memberToFriendDto).collect(Collectors.toList());
     }
 
     // 받은 요청중 보류중인거
-    public List<FriendDto> findPendingResponse() {
+    public List<InquiryMemberDto> findPendingResponse() {
         log.warn("연관관계 메서드 생각해보기");
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return friendshipRepository.findPendingResponse(customUserDetails.getId()).stream().map(FriendDto::memberToFriendDto).collect(Collectors.toList());
+        return friendshipRepository.findPendingResponse(customUserDetails.getId()).stream().map(InquiryMemberDto::memberToFriendDto).collect(Collectors.toList());
     }
 
     // 보낸 요청중 보류중인거
-    public List<FriendDto> findPendingRequest() {
+    public List<InquiryMemberDto> findPendingRequest() {
         log.warn("연관관계 메서드 생각해보기");
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return friendshipRepository.findPendingRequest(customUserDetails.getId()).stream().map(FriendDto::memberToFriendDto).collect(Collectors.toList());
+        return friendshipRepository.findPendingRequest(customUserDetails.getId()).stream().map(InquiryMemberDto::memberToFriendDto).collect(Collectors.toList());
     }
 
     public AuthSchoolResponse authSchool(AuthSchoolDto authSchoolDto) {
@@ -240,10 +248,55 @@ public class MemberService {
         return null;
     }
 
-    public void resetPassword(String school, String studentId, String newPassword) {
-        Member member = memberRepository.findByStudentIdAndSchool(studentId, school).orElseThrow(() -> new NoSuchElementException("회원을 찾을수 없음"));
-        String encodedPassword = bCryptPasswordEncoder.encode(newPassword);
-        member.setPassword(encodedPassword);
+    public void resetPassword(ResetPasswordDto resetPasswordDto) {
+        Member me = memberRepository.findByStudentId(resetPasswordDto.getStudentId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        String encodedPassword = bCryptPasswordEncoder.encode(resetPasswordDto.getNewPassword());
+        me.setPassword(encodedPassword);
+    }
+
+    public void changePassword(ResetPasswordDto resetPasswordDto) {
+        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        String encodedPassword = bCryptPasswordEncoder.encode(resetPasswordDto.getNewPassword());
+        me.setPassword(encodedPassword);
+    }
+
+    public List<SearchMemberDto> searchMemberByStudentId(String keyword) {
+        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+
+        List<Member> myFriends = me.getFriends();
+
+        // 내가 요청 보냈거나, 받은 친구를 pending으로 표시
+        List<Member> pendingFriends = new ArrayList<>();
+        pendingFriends.addAll(friendshipRepository.findPendingRequests(me)); // 내가 받은 요청
+        pendingFriends.addAll(friendshipRepository.findPendingRequest(me.getId())); // 내가 보낸 요청
+
+        List<Member> members = memberRepository.findByStudentIdContaining(keyword);
+        members.remove(me);
+
+        return members.stream()
+                .map(member -> {
+                    SearchFriendStatus status;
+                    if (myFriends.contains(member)) {
+                        status = SearchFriendStatus.ALREADY_FRIEND;
+                    } else if (pendingFriends.contains(member)) {
+                        status = SearchFriendStatus.PENDING;
+                    } else {
+                        status = SearchFriendStatus.NOT_FRIEND;
+                    }
+                    return new SearchMemberDto(member, status);
+                })
+                .toList();
+    }
+
+
+    public void deleteFriend(Long friendId) {
+        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        Member friendToRemove = memberRepository.findById(friendId).orElseThrow(() -> new NoSuchElementException("해당 친구가 존재하지 않습니다."));
+        // friendship에서 me, friend 이거나 friend, me인 경우를 모두 제거한다
+        friendshipRepository.deleteFriend(customUserDetails.getId(), friendId);
     }
 
 

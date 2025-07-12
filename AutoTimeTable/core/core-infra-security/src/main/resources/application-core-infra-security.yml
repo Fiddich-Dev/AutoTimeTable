@@ -1,0 +1,8 @@
+#spring.jwt.secret=vmfhaltmskdlstkfkdgodyroqkfwkdbalroqkfwkdbalaaaaaaaaaaaaaaaabbbbb
+
+spring:
+  jwt:
+    secret: ${JWT_SECRET}
+#    token:
+#      access-expiration-time: 하루
+#      refresh-expiration-time: 일주일

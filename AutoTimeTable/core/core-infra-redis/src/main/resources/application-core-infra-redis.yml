@@ -1,0 +1,24 @@
+spring.config.activate.on-profile: local
+
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379
+---
+spring.config.activate.on-profile: prod
+
+spring:
+  data:
+    redis:
+      host: ${REDIS_HOST}
+      port: ${REDIS_PORT}
+
+---
+spring.config.activate.on-profile: test
+
+spring:
+  data:
+    redis:
+      host: localhost
+      port: 6379

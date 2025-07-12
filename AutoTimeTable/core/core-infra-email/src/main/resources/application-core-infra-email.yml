@@ -1,0 +1,18 @@
+
+#  spring.mail.properties.mail.smtp.auth=true
+#    spring.mail.properties.mail.smtp.timeout=5000
+#    spring.mail.properties.mail.smtp.starttls.enable=true
+spring:
+  mail:
+    host: smtp.gmail.com
+    port: ${SMTP_PORT}
+    username: ${SMTP_USERNAME}
+    password: ${SMTP_PASSWORD}
+    properties:
+      mail:
+        smtp:
+          auth: true
+          timeout: 5000
+          starttls:
+            enable: true
+

@@ -2,6 +2,7 @@ package org.fiddich.coreinfradomain.domain.Member;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.fiddich.coreinfradomain.domain.Lecture.School;
 import org.fiddich.coreinfradomain.domain.friendship.Friendship;
 import org.fiddich.coreinfradomain.domain.friendship.FriendshipStatus;
 import org.fiddich.coreinfradomain.domain.Timetable.Timetable;
@@ -24,40 +25,56 @@ public class Member {
     private String password;
     private String profileImage;
     private String username;
-    private String school;
+
+//    @ManyToOne(fetch = FetchType.LAZY)
+//    @JoinColumn(name = "school_id")
+//    private School school;
+
+//    private String school;
+
+    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<Timetable> timetables = new ArrayList<>();
+
     private String department;
     private String role;
 
-    @Builder.Default
-    @OneToMany(mappedBy = "member")
-    private List<Timetable> timetables = new ArrayList<>();
+//    @Builder.Default
+//    @OneToMany(mappedBy = "member")
+//    private List<Timetable> timetables = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "receiver")
+    @OneToMany(mappedBy = "receiver", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Friendship> receivedFriendships = new ArrayList<>();
 
     @Builder.Default
-    @OneToMany(mappedBy = "requester")
+    @OneToMany(mappedBy = "requester", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Friendship> requestFriendships = new ArrayList<>();
 
     // 편의 메서드
     public List<Member> getFriends() {
-
-        return this.receivedFriendships.stream()
+        List<Member> received = this.receivedFriendships.stream()
                 .filter(f -> f.getFriendshipStatus() == FriendshipStatus.ACCEPTED)
                 .map(Friendship::getRequester)
                 .toList();
+
+        List<Member> requested = this.requestFriendships.stream()
+                .filter(f -> f.getFriendshipStatus() == FriendshipStatus.ACCEPTED)
+                .map(Friendship::getReceiver)
+                .toList();
+
+        // 두 리스트를 합치기
+        List<Member> friends = new ArrayList<>();
+        friends.addAll(received);
+        friends.addAll(requested);
+        return friends;
     }
 
     public List<Member> getPendingFriends() {
-        List<Member> pendingFriends = new ArrayList<>();
 
-        this.receivedFriendships.stream()
+        return this.receivedFriendships.stream()
                 .filter(f -> f.getFriendshipStatus() == FriendshipStatus.PENDING)
-                .map(f -> f.getReceiver())
-                .forEach(m -> pendingFriends.add(m));
-
-        return pendingFriends;
+                .map(Friendship::getRequester)
+                .toList();
     }
 
     public void setPassword(String password) {

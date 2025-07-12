@@ -1,5 +1,7 @@
 package com.fiddich.LectureMapping;
 
+import com.fiddich.LectureMapping.entity.Lecture;
+
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 

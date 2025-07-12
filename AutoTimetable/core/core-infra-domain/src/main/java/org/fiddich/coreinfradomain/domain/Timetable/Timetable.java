@@ -20,11 +20,10 @@ public class Timetable {
     @Column(name = "timetable_id")
     private Long id;
 
-    @ManyToOne
+    @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "member_id")
     private Member member;
 
-//    private String semesterYear;
     @Column(name = "year_col")
     private String year;
 
@@ -39,15 +38,18 @@ public class Timetable {
     // member객체를 넣고 그 member의 시간표에 추가한다
     public void setMember(Member member) {
         this.member = member;
-        member.getTimetables().add(this);
+//        member.getTimetables().add(this);
     }
 
-    public void setTimetableLectures(List<TimetableLecture> lectures) {
+    public void setTimetableLectures(List<TimetableLecture> timetableLectures) {
         this.timetableLectures.clear(); // 기존 목록 비우기
-        for (TimetableLecture l : lectures) {
+        for (TimetableLecture l : timetableLectures) {
             l.setTimetable(this);       // 역참조만 설정
             this.timetableLectures.add(l); // 새 목록에 추가
         }
     }
 
+    public void setRepresent(Boolean represent) {
+        isRepresent = represent;
+    }
 }
