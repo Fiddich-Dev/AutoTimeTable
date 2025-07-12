@@ -5,8 +5,8 @@ services:
     build:
       context: .
       dockerfile: ./Dockerfile
-    container_name: server
-    image: "env-test"
+    container_name: ${CONTAINER_NAME}
+    image: ${IMAGE_NAME}
     ports:
       - 8080:8080
     environment:
