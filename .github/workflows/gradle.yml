@@ -54,6 +54,9 @@ jobs:
           # 기존 컨테이너 정리
           docker stop ${{ secrets.CONTAINER_NAME }} || true
           docker rm ${{ secrets.CONTAINER_NAME }} || true
+
+          # 기존 이미지 정리
+          docker rmi ${{ secrets.IMAGE_NAME }} || true
           
           # 이미지 로드
           gunzip -f ${{ github.sha }}.tar.gz
@@ -90,7 +93,7 @@ jobs:
           ${{ secrets.IMAGE_NAME }}
 
           # 못쓴느 이미지 삭제
-          sudo docker rmi $(sudo docker images -f "dangling=true" -q) --force
+          # sudo docker rmi $(sudo docker images -f "dangling=true" -q) --force
 
           # tar 파일 정리
           rm -f ${{ github.sha }}.tar.gz
