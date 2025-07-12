@@ -18,6 +18,7 @@ jar {
 	}
 }
 
+
 allprojects {
 
 	group = 'com.fiddich'
@@ -35,6 +36,9 @@ allprojects {
 
 }
 
+tasks.withType(JavaCompile).configureEach {
+	options.release = 17
+}
 
 subprojects {
 

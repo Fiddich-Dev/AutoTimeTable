@@ -18,6 +18,9 @@
 #      hibernate:
 #        default_batch_fetch_size: 100
 
+
+spring.config.import: application-secret.yml
+
 spring.config.activate.on-profile: local
 
 spring:
