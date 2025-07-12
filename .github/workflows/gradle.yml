@@ -96,5 +96,5 @@ jobs:
           # sudo docker rmi $(sudo docker images -f "dangling=true" -q) --force
 
           # tar 파일 정리
-          rm -f ${{ github.sha }}.tar.gz
-          rm -f ${{ github.sha }}.tar
+          # rm -f ${{ github.sha }}.tar.gz
+          # rm -f ${{ github.sha }}.tar
