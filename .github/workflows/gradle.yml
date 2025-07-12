@@ -96,21 +96,35 @@ jobs:
           docker load -i ${{ github.sha }}.tar
           
           # .env 파일 생성 (반드시 추가)
-          cat <<EOF > .env
-          DB_URL=${{ secrets.DB_URL }}
-          DB_USERNAME=${{ secrets.DB_USERNAME }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          REDIS_HOST=${{ secrets.REDIS_HOST }}
-          REDIS_PORT=${{ secrets.REDIS_PORT }}
-          SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
-          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-          SMTP_PORT=${{ secrets.SMTP_PORT }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          CONTAINER_NAME=${{ secrets.CONTAINER_NAME }}
-          IMAGE_NAME=${{ secrets.IMAGE_NAME }}
-          EOF
+          # cat <<EOF > .env
+          # DB_URL=${{ secrets.DB_URL }}
+          # DB_USERNAME=${{ secrets.DB_USERNAME }}
+          # DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          # REDIS_HOST=${{ secrets.REDIS_HOST }}
+          # REDIS_PORT=${{ secrets.REDIS_PORT }}
+          # SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
+          # SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+          # SMTP_PORT=${{ secrets.SMTP_PORT }}
+          # JWT_SECRET=${{ secrets.JWT_SECRET }}
+          # CONTAINER_NAME=${{ secrets.CONTAINER_NAME }}
+          # IMAGE_NAME=${{ secrets.IMAGE_NAME }}
+          # EOF
           
           # Docker Compose 실행 (로그 출력)
-          docker run --env-file ./.env -d -p 8080:8080 ${{ secrets.IMAGE_NAME }}
+          # docker run --env-file ./.env -d -p 8080:8080 ${{ secrets.IMAGE_NAME }}
+
+          docker run -d \
+          --name ${{ secrets.CONTAINER_NAME }} \
+          -p 8080:8080 \
+          -e DB_URL=${{ secrets.DB_URL }} \
+          -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
+          -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
+          -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
+          -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
+          -e SMTP_USERNAME=${{ secrets.SMTP_USERNAME }} \
+          -e SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }} \
+          -e SMTP_PORT=${{ secrets.SMTP_PORT }} \
+          -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
+          ${{ secrets.IMAGE_NAME }}
 
           sudo docker rmi $(sudo docker images -f "dangling=true" -q) --force
