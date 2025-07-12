@@ -20,23 +20,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-
-    - name: Create .env file
-      run: |
-        cat <<EOF > .env
-        DB_URL=${{ secrets.DB_URL }}
-        DB_USERNAME=${{ secrets.DB_USERNAME }}
-        DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-        REDIS_HOST=${{ secrets.REDIS_HOST }}
-        REDIS_PORT=${{ secrets.REDIS_PORT }}
-        SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
-        SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-        SMTP_PORT=${{ secrets.SMTP_PORT }}
-        JWT_SECRET=${{ secrets.JWT_SECRET }}
-        CONTAINER_NAME=${{ secrets.CONTAINER_NAME }}
-        IMAGE_NAME=${{ secrets.IMAGE_NAME }}
-        EOF
-        cat .env
         
     - name: Build
       run: ./gradlew clean build
@@ -51,25 +34,6 @@ jobs:
     - name: Save Docker image to archive
       run: |
         docker save ${{ secrets.IMAGE_NAME }} | gzip > ${GITHUB_SHA}.tar.gz
-
-    # GitHub Actions 워크플로우에 추가
-    # - name: Copy Dockerfile to EC2
-    #   uses: appleboy/scp-action@v0.1.7
-    #   with:
-    #     host: ${{ secrets.EC2_HOST }}
-    #     username: ${{ secrets.EC2_USER }}
-    #     key: ${{ secrets.EC2_SSH_KEY }}
-    #     source: "Dockerfile"
-    #     target: "/home/${{ secrets.EC2_USER }}/"
-
-    # - name: Copy docker-compose.yml to EC2
-    #   uses: appleboy/scp-action@v0.1.7
-    #   with:
-    #     host: ${{ secrets.EC2_HOST }}
-    #     username: ${{ secrets.EC2_USER }}
-    #     key: ${{ secrets.EC2_SSH_KEY }}
-    #     source: "docker-compose.yml"  # 프로젝트 루트의 docker-compose.yml 파일
-    #     target: "/home/${{ secrets.EC2_USER }}/"
       
     - name: Copy image to EC2
       uses: appleboy/scp-action@v0.1.7
@@ -88,14 +52,14 @@ jobs:
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
           # 기존 컨테이너 정리
-          docker stop ${{ secrets.APP_NAME }} || true
-          docker rm ${{ secrets.APP_NAME }} || true
+          docker stop ${{ secrets.CONTAINER_NAME }} || true
+          docker rm ${{ secrets.CONTAINER_NAME }} || true
           
           # 이미지 로드
           gunzip -f ${{ github.sha }}.tar.gz
           docker load -i ${{ github.sha }}.tar
           
-          # .env 파일 생성 (반드시 추가)
+          # .env 파일 생성
           # cat <<EOF > .env
           # DB_URL=${{ secrets.DB_URL }}
           # DB_USERNAME=${{ secrets.DB_USERNAME }}
@@ -109,10 +73,8 @@ jobs:
           # CONTAINER_NAME=${{ secrets.CONTAINER_NAME }}
           # IMAGE_NAME=${{ secrets.IMAGE_NAME }}
           # EOF
-          
-          # Docker Compose 실행 (로그 출력)
-          # docker run --env-file ./.env -d -p 8080:8080 ${{ secrets.IMAGE_NAME }}
 
+          # 이미지 실행
           docker run -d \
           --name ${{ secrets.CONTAINER_NAME }} \
           -p 8080:8080 \
@@ -127,4 +89,9 @@ jobs:
           -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
           ${{ secrets.IMAGE_NAME }}
 
+          # 못쓴느 이미지 삭제
           sudo docker rmi $(sudo docker images -f "dangling=true" -q) --force
+
+          # tar 파일 정리
+          rm -f ${{ github.sha }}.tar.gz
+          rm -f ${{ github.sha }}.tar
