@@ -51,50 +51,38 @@ jobs:
         username: ${{ secrets.EC2_USER }}
         key: ${{ secrets.EC2_SSH_KEY }}
         script: |
-          # 기존 컨테이너 정리
+          # 기존 컨테이너 정리 (경고 무시)
           docker stop ${{ secrets.CONTAINER_NAME }} || true
           docker rm ${{ secrets.CONTAINER_NAME }} || true
-
-          # 기존 이미지 정리
           docker rmi ${{ secrets.IMAGE_NAME }} || true
           
-          # 이미지 로드
-          gunzip -f ${{ github.sha }}.tar.gz
-          docker load -i ${{ github.sha }}.tar
+          # 이미지 로드 및 태그 설정
+          gunzip -f ${GITHUB_SHA}.tar.gz
+          docker load -i ${GITHUB_SHA}.tar
+          docker tag ${GITHUB_SHA} ${{ secrets.IMAGE_NAME }}  # 추가된 부분
           
-          # .env 파일 생성
-          # cat <<EOF > .env
-          # DB_URL=${{ secrets.DB_URL }}
-          # DB_USERNAME=${{ secrets.DB_USERNAME }}
-          # DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          # REDIS_HOST=${{ secrets.REDIS_HOST }}
-          # REDIS_PORT=${{ secrets.REDIS_PORT }}
-          # SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
-          # SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-          # SMTP_PORT=${{ secrets.SMTP_PORT }}
-          # JWT_SECRET=${{ secrets.JWT_SECRET }}
-          # CONTAINER_NAME=${{ secrets.CONTAINER_NAME }}
-          # IMAGE_NAME=${{ secrets.IMAGE_NAME }}
-          # EOF
-
-          # 이미지 실행
+          # 환경변수 파일 생성 (보안 강화)
+          cat <<EOF > .env
+          DB_URL=${{ secrets.DB_URL }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          EOF
+          
+          # 컨테이너 실행
           docker run -d \
-          --name ${{ secrets.CONTAINER_NAME }} \
-          -p 8080:8080 \
-          -e DB_URL=${{ secrets.DB_URL }} \
-          -e DB_USERNAME=${{ secrets.DB_USERNAME }} \
-          -e DB_PASSWORD=${{ secrets.DB_PASSWORD }} \
-          -e REDIS_HOST=${{ secrets.REDIS_HOST }} \
-          -e REDIS_PORT=${{ secrets.REDIS_PORT }} \
-          -e SMTP_USERNAME=${{ secrets.SMTP_USERNAME }} \
-          -e SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }} \
-          -e SMTP_PORT=${{ secrets.SMTP_PORT }} \
-          -e JWT_SECRET=${{ secrets.JWT_SECRET }} \
-          ${{ secrets.IMAGE_NAME }}
-
-          # 못쓴느 이미지 삭제
-          # sudo docker rmi $(sudo docker images -f "dangling=true" -q) --force
-
-          # tar 파일 정리
-          # rm -f ${{ github.sha }}.tar.gz
-          # rm -f ${{ github.sha }}.tar
+            --name ${{ secrets.CONTAINER_NAME }} \
+            --env-file .env \
+            -p 8080:8080 \
+            ${{ secrets.IMAGE_NAME }}
+          
+          # 정리
+          rm -f ${GITHUB_SHA}.tar*
+          docker image prune -f
+          rm -f .env
+    
