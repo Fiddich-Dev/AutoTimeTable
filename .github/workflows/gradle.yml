@@ -121,6 +121,6 @@ jobs:
           docker run --env-file ./.env -d -p 8080:8080 --name ${{ secrets.CONTAINER_NAME }} ${{ secrets.IMAGE_NAME }}
           #정리 
           # sudo docker rmi $(sudo docker images -f "dangling=true" -q) --force
-          rm -f ${GITHUB_SHA}.tar.gz
-          rm -f ${GITHUB_SHA}.tar
+          rm -f ${{ github.sha }}.tar.gz
+          rm -f ${{ github.sha }}.tar
           rm -f .env
