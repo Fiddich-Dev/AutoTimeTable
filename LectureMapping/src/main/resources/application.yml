@@ -1,7 +1,0 @@
-schools:
-  schools:
-    - name: 성균관대학교
-      code: SUNGKYUNKWAN
-      departments:
-        - name: 한문학과
-          code: classicalChinese
