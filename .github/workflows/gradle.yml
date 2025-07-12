@@ -96,7 +96,8 @@ jobs:
           SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
           SMTP_PORT=${{ secrets.SMTP_PORT }}
           JWT_SECRET=${{ secrets.JWT_SECRET }}
-          SPRING_PROFILES_ACTIVE=prod
+          CONTAINER_NAME=${{ secrets.CONTAINER_NAME }}
+          IMAGE_NAME=${{ secrets.IMAGE_NAME }}
           EOF
           
           # Docker Compose 실행 (로그 출력)
