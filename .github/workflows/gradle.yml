@@ -72,3 +72,4 @@ jobs:
           gunzip -f ${{ github.sha }}.tar.gz
           docker load -i ${{ github.sha }}.tar
           docker run -d --name ${{ secrets.APP_NAME }} -p 8080:8080 ${{ secrets.APP_NAME }}
+          sudo docker rmi $(sudo docker images -f "dangling=true" -q) --force
