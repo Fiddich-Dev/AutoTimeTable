@@ -1,4 +1,4 @@
-package org.fiddich.api.domain.member.dto;
+package org.fiddich.api.domain.friend.dto;
 
 import lombok.Data;
 

@@ -48,9 +48,6 @@ public class MemberController {
         return ApiResponse.onSuccess(null);
     }
 
-
-
-
     // 인증 메일은 보낸다
     // 인증이 되면 비밀번호 재설정 기회는 준다
     @PatchMapping("/password-reset")

@@ -1,4 +1,4 @@
-package org.fiddich.api.domain.member.dto;
+package org.fiddich.api.domain.friend.dto;
 
 import lombok.Data;
 import org.fiddich.coreinfradomain.domain.Member.Member;
@@ -7,7 +7,6 @@ import org.fiddich.coreinfradomain.domain.Member.Member;
 public class SearchMemberDto {
 
     private Long id;
-
     private String studentId;
     private String profileImage;
     private String username;

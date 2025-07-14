@@ -129,12 +129,7 @@ public class TimetableRepository {
                 .executeUpdate();
     }
 
-    public List<Category> findAllCategoryByYearAndSemester(String year, String semester) {
-        return em.createQuery("select c from Category c where c.year = :year and c.semester = :semester", Category.class)
-                .setParameter("year", year)
-                .setParameter("semester", semester)
-                .getResultList();
-    }
+
 
 
 

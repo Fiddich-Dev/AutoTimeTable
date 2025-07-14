@@ -3,6 +3,7 @@ package org.fiddich.coreinfradomain.domain.Lecture.repository;
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.TypedQuery;
 import lombok.RequiredArgsConstructor;
+import org.fiddich.coreinfradomain.domain.Lecture.Category;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 import org.springframework.stereotype.Repository;
 
@@ -81,6 +82,13 @@ public class LectureRepository {
            or l.codeSection like :kw
     """, Lecture.class)
                 .setParameter("kw", "%" + keyword + "%")
+                .getResultList();
+    }
+
+    public List<Category> findAllCategoryByYearAndSemester(String year, String semester) {
+        return em.createQuery("select c from Category c where c.year = :year and c.semester = :semester", Category.class)
+                .setParameter("year", year)
+                .setParameter("semester", semester)
                 .getResultList();
     }
 

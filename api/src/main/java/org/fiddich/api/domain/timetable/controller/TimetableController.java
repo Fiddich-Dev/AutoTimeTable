@@ -91,24 +91,6 @@ public class TimetableController {
         return ApiResponse.onSuccess(null);
     }
 
-    @GetMapping("/lectures/search")
-    public ApiResponse<List<InternalLectureDto>> searchLectures(@RequestParam String keyword) {
-        log.info("{}로 강의 검색", keyword);
-        return ApiResponse.onSuccess(timetableService.searchLecturesByKeyword(keyword));
-    }
-    // 아마 안쓸듯
-    @GetMapping("/lectures")
-    public ApiResponse<List<Lecture>> getAllLectures() {
-        log.info("모든 강의 조회");
-        return ApiResponse.onSuccess(timetableService.getAllLectures());
-    }
-
-    @GetMapping("/categories")
-    public ApiResponse<List<InquiryDepartmentDto>> getAllCategories(@RequestParam String year, @RequestParam String semester) {
-        log.info("모든 학과 조회 year = {}, semester = {}", year, semester);
-        return ApiResponse.onSuccess(timetableService.getAllCategories(year, semester));
-    }
-
     @PostMapping("/timetables/compare-lecture")
     public ApiResponse<List<CompareTimetableDto>> compareTimetable(@RequestBody CompareMemberDto compareMemberDto) {
         log.info("겹치는 강의 비교");

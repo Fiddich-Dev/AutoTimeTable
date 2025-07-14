@@ -1,21 +1,15 @@
 package org.fiddich.api.auth.controller;
 
 
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.auth.dto.AuthCodeVerifyDTO;
 import org.fiddich.api.auth.dto.EmailDto;
 import org.fiddich.api.auth.service.AuthService;
-import org.fiddich.api.domain.member.dto.AuthSchoolDto;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
 import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;
 import org.springframework.http.ResponseEntity;
-import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
-
-import java.util.Map;
 
 @Slf4j
 @RestController

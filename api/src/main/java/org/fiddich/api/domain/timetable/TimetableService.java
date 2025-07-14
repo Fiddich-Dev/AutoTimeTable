@@ -1,6 +1,7 @@
 package org.fiddich.api.domain.timetable;
 
 import jakarta.persistence.EntityManager;
+import org.fiddich.api.domain.lecture.dto.InquiryDepartmentDto;
 import org.fiddich.api.domain.timetable.dto.*;
 import org.fiddich.coreinfradomain.TimetableLecture;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
@@ -20,7 +21,6 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import java.io.IOException;
-import java.sql.Time;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -140,12 +140,7 @@ public class TimetableService {
         return lectureRepository.findAll();
     }
 
-    // 커스텀 강의는 안나와야함
-    public List<InternalLectureDto> searchLecturesByKeyword(String keyword) {
-        return lectureRepository.searchByAutoField(keyword).stream()
-                .map(InternalLectureDto::new)
-                .toList();
-    }
+
 
     // 완료
     public void changeMainTimetable(TimetableIdDto timetableIdDto) {
@@ -367,12 +362,7 @@ public class TimetableService {
         return externalLectureDtos;
     }
 
-    public List<InquiryDepartmentDto> getAllCategories(String year, String semester) {
-        return timetableRepository.findAllCategoryByYearAndSemester(year, semester)
-                .stream()
-                .map(c -> new InquiryDepartmentDto(c.getId(), c.getName()))
-                .toList();
-    }
+
 
     // 겹치는 강의만 가져오기
     public List<CompareTimetableDto> compareTimetable(CompareMemberDto compareMemberDto) {

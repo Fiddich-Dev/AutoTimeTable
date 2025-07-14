@@ -1,4 +1,4 @@
-package org.fiddich.api.domain.member.dto;
+package org.fiddich.api.domain.friend.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,7 +9,6 @@ import org.fiddich.coreinfradomain.domain.Member.Member;
 public class InquiryMemberDto {
 
     private Long id;
-
     private String studentId;
     private String profileImage;
     private String username;
@@ -19,10 +18,6 @@ public class InquiryMemberDto {
         this.studentId = member.getStudentId();
         this.profileImage = member.getProfileImage();
         this.username = member.getUsername();
-    }
-
-    public static InquiryMemberDto memberToFriendDto(Member member) {
-        return new InquiryMemberDto(member.getId(), member.getStudentId(), member.getProfileImage(), member.getUsername());
     }
 
 }
