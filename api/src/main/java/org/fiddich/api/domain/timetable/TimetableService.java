@@ -256,9 +256,6 @@ public class TimetableService {
                         .professor(extDto.getProfessor())
                         .time(extDto.getTime())
                         .credit(extDto.getCredit())
-                        .isCustom(true)
-//                        .member(member)
-//                        .school(member.getSchool())
                         .build();
 
                 lectureRepository.save(newLecture);

@@ -19,6 +19,10 @@ public class Lecture {
     @Column(name = "lecture_id")
     private Long id;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
     private String code;
     private String codeSection;
     private String name;
@@ -29,23 +33,4 @@ public class Lecture {
     private String credit;
     private String target;
     private String notice;
-
-    @Column(name = "`year`")
-    private String year;
-
-    private String semester;
-    private boolean isCustom;
-
-//    @ManyToOne(fetch = FetchType.LAZY)
-//    @JoinColumn(name = "member_id")
-//    private Member member;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "school_id")
-    private School school;
-
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    private Category category;
-
 }

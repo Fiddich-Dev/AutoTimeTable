@@ -31,12 +31,6 @@ public class FriendController {
         return ApiResponse.onSuccess(memberService.findPendingResponse());
     }
 
-    @GetMapping("/friends/pending/requests")
-    public ApiResponse<List<InquiryMemberDto>> findPendingRequest() {
-        log.info("대기중인 요청 조회");
-        return ApiResponse.onSuccess(memberService.findPendingRequest());
-    }
-
     @PostMapping("/friends/request")
     public ApiResponse<Void> sendFriendRequest(@RequestBody FriendShipDto requestFriendshipDto) {
         log.info("친구 요청");

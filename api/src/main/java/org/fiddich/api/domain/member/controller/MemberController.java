@@ -60,20 +60,4 @@ public class MemberController {
         return ApiResponse.onSuccess(null);
     }
 
-    // 아마 안쓸듯
-    @PostMapping("/auth/school")
-    public ApiResponse<?> authSchool(@RequestBody AuthSchoolDto authSchoolDto) throws Exception {
-        log.info("authSchool");
-        AuthSchoolResponse authSchoolResponse = memberService.authSchool(authSchoolDto);
-        // returncode, uid, username
-        if(authSchoolResponse == null) {
-            throw new NoSuchElementException("로그인 정보 없음");
-        }
-        if(authSchoolResponse.getReturnCode().equals("success")) {
-            return ApiResponse.onSuccess(authSchoolResponse);
-        }
-        else {
-            return ApiResponse.onFailure("123", "123");
-        }
-    }
 }
