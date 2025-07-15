@@ -1,15 +1,8 @@
 package org.fiddich.api.domain.member;
 
-import com.google.gson.Gson;
-import com.squareup.okhttp.*;
-import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.domain.member.dto.*;
-import org.fiddich.coreinfradomain.domain.Member.SchoolNameConverter;
-import org.fiddich.coreinfradomain.domain.friendship.Friendship;
-import org.fiddich.coreinfradomain.domain.friendship.FriendshipStatus;
 import org.fiddich.coreinfradomain.domain.Member.Member;
-import org.fiddich.coreinfradomain.domain.friendship.repository.FriendshipRepository;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
 import org.fiddich.coreinfraredis.util.RedisUtil;
@@ -20,12 +13,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Base64;
-import java.util.List;
 import java.util.NoSuchElementException;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Service

@@ -1,4 +1,4 @@
-package org.fiddich.api.domain.timetable;
+package org.fiddich.api.domain.timetable.helper;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;

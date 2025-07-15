@@ -2,6 +2,7 @@ package org.fiddich.coreinfradomain.domain.Timetable;
 
 import jakarta.persistence.*;
 import lombok.*;
+import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.TimetableLecture;
 
@@ -52,4 +53,20 @@ public class Timetable {
     public void setRepresent(Boolean represent) {
         isRepresent = represent;
     }
+
+    public void setMain() {
+        isRepresent = true;
+    }
+
+    public void setNormal() {
+        isRepresent = false;
+    }
+
+    public void changeLectures(List<Lecture> lectures) {
+        this.timetableLectures.clear();
+        for(Lecture lecture : lectures) {
+            this.timetableLectures.add(new TimetableLecture(this, lecture));
+        }
+    }
+
 }

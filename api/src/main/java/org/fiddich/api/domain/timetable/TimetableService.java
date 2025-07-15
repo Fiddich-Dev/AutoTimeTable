@@ -1,8 +1,10 @@
 package org.fiddich.api.domain.timetable;
 
 import jakarta.persistence.EntityManager;
-import org.fiddich.api.domain.lecture.dto.InquiryDepartmentDto;
 import org.fiddich.api.domain.timetable.dto.*;
+import org.fiddich.api.domain.timetable.helper.TimeParser;
+import org.fiddich.api.domain.timetable.helper.TimetableGenerator;
+import org.fiddich.api.domain.timetable.helper.TimetableScorer;
 import org.fiddich.coreinfradomain.TimetableLecture;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 import org.fiddich.coreinfradomain.domain.Lecture.repository.LectureRepository;
@@ -37,43 +39,21 @@ public class TimetableService {
     public Long save(CreateTimetableDto createTimetableDto) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member member = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        List<Lecture> lectures = lectureRepository.findAllByIds(createTimetableDto.getSelectedLectureIds());
 
-        String year = createTimetableDto.getYear();
-        String semester = createTimetableDto.getSemester();
-        String timetableName = createTimetableDto.getTimeTableName();
-        boolean isRepresent = createTimetableDto.getIsRepresent();
-        List<Long> lectureIds = createTimetableDto.getSelectedLectureIds();
-        List<Lecture> lectures = lectureRepository.findAllByIds(lectureIds);
-
-
-        if(isRepresent) {
-            List<Timetable> timetables = timetableRepository.findByMember(member.getId());
-            for(Timetable timetable : timetables) {
-                timetable.setRepresent(false);
-            }
+        if(createTimetableDto.getIsRepresent()) {
+            timetableRepository.clearMainTimetable(member.getId());
         }
-
 
         Timetable timetable = Timetable.builder()
                 .member(member)
-                .year(year)
-                .semester(semester)
-                .timeTableName(timetableName)
-                .isRepresent(isRepresent)
+                .year(createTimetableDto.getYear())
+                .semester(createTimetableDto.getSemester())
+                .timeTableName(createTimetableDto.getTimeTableName())
+                .isRepresent(createTimetableDto.getIsRepresent())
                 .build();
 
-        List<TimetableLecture> timetableLectures = new ArrayList<>();
-
-        for(Lecture lecture : lectures) {
-            TimetableLecture timetableLecture = TimetableLecture.builder()
-                    .timetable(timetable)
-                    .lecture(lecture)
-                    .build();
-
-            timetableLectures.add(timetableLecture);
-        }
-
-        timetable.setTimetableLectures(timetableLectures); // 연관관계 설정
+        timetable.changeLectures(lectures);
         timetableRepository.save(timetable);
         return timetable.getId();
     }
@@ -90,17 +70,10 @@ public class TimetableService {
     public List<InquiryTimeTableDto> getTimetablesAboutYearAndSemester(String year, String semester) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<Timetable> timetables = timetableRepository.findTimetablesWithLecturesByMemberId(customUserDetails.getId());
+
         return timetables.stream()
                 .filter(t -> t.getYear().equals(year) && t.getSemester().equals(semester))
-                .map(t -> new InquiryTimeTableDto(
-                        t.getId(),
-                        t.getYear(),
-                        t.getSemester(),
-                        t.getIsRepresent(),
-                        t.getTimetableLectures().stream()
-                                .map(l -> new InternalLectureDto(l.getLecture().getId(), l.getLecture().getCode(), l.getLecture().getCodeSection(), l.getLecture().getName(), l.getLecture().getProfessor(), l.getLecture().getType(), l.getLecture().getTime(), l.getLecture().getCredit(), l.getLecture().getCategory().getName(), l.getLecture().getNotice()))
-                                .toList()
-                ))
+                .map(InquiryTimeTableDto::new)
                 .toList();
     }
     // 완료
@@ -108,39 +81,20 @@ public class TimetableService {
         // 학년도로 시간표 조회 메서드 사용
         List<InquiryTimeTableDto> findInquiryTimeTableDtos = getTimetablesAboutYearAndSemester(year, semester);
         // 만약 메인사간표가 없다면 null을 반환
-        return findInquiryTimeTableDtos.stream().filter(t -> t.isRepresent() == true).findFirst().orElse(null);
+        return findInquiryTimeTableDtos.stream().filter(t -> t.isRepresent()).findFirst().orElse(null);
     }
-    // 일단 완료
+    // 완료
     public void editTimetable(Long timetableId, LectureIdsDto lectureIdsDto) {
-        // timetableLecture중에 dto에 없는거만 삭제
-        // dto중에 timetableLecture에 없는거만 삽입
-        // 배치사이즈 설정
-
-        // 조회
         Timetable timetable = timetableRepository.findByIdWithTimetableLectures(timetableId)
                 .orElseThrow(() -> new NoSuchElementException("시간표를 찾을 수 없습니다."));
-        // 삭제
-        timetableRepository.deleteTimetableLecture(timetableId);
-        // 조회
+
         List<Lecture> lectures = lectureRepository.findAllByIds(lectureIdsDto.getLectureIds());
-        // 삽입
-        for(Lecture lecture : lectures) {
-            TimetableLecture timetableLecture = new TimetableLecture();
-            timetableLecture.setTimetable(timetable);
-            timetableLecture.setLecture(lecture);
-            timetable.getTimetableLectures().add(timetableLecture);
-        }
+        timetable.changeLectures(lectures);
     }
     // 완료
     public void deleteTimetable(Long timetableId) {
         timetableRepository.deleteTimetable(timetableId);
     }
-    // 검색 구조 변경
-    public List<Lecture> getAllLectures() {
-        return lectureRepository.findAll();
-    }
-
-
 
     // 완료
     public void changeMainTimetable(TimetableIdDto timetableIdDto) {
@@ -330,6 +284,7 @@ public class TimetableService {
                 .post(); // ← 여기 수정
 
         Element tableElement = doc.selectFirst("table");
+        assert tableElement != null;
         String year = tableElement.attr("year");
         String semester = tableElement.attr("semester");
         Elements subjects = tableElement.select("subject");

@@ -82,6 +82,7 @@ public class Member {
                 .build();
 
         this.requestFriendships.add(friendship);
+        receiver.getReceivedFriendships().add(friendship);
     }
 
     // 친구 요청 수락
@@ -102,11 +103,19 @@ public class Member {
                 .orElseThrow(() -> new IllegalArgumentException("해당 친구 요청을 찾을 수 없습니다."));
 
         this.receivedFriendships.remove(friendship);
+        requester.getRequestFriendships().remove(friendship);
     }
 
     // 친구 삭제
     public void removeFriend(Member friend) {
-        this.getFriends().remove(friend);
+        this.getFriends().remove(friend); // 안되는지 테스트
+//        // 요청자로서 제거
+//        this.requestFriendships.removeIf(f -> f.getReceiver().equals(friend) && f.getFriendshipStatus() == FriendshipStatus.ACCEPTED);
+//        friend.receivedFriendships.removeIf(f -> f.getRequester().equals(this) && f.getFriendshipStatus() == FriendshipStatus.ACCEPTED);
+//
+//        // 수신자로서 제거
+//        this.receivedFriendships.removeIf(f -> f.getRequester().equals(friend) && f.getFriendshipStatus() == FriendshipStatus.ACCEPTED);
+//        friend.requestFriendships.removeIf(f -> f.getReceiver().equals(this) && f.getFriendshipStatus() == FriendshipStatus.ACCEPTED);
     }
 
 

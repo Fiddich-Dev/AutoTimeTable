@@ -37,4 +37,11 @@ public class TimetableLecture {
     public void setLecture(Lecture lecture) {
         this.lecture = lecture;
     }
+
+    public TimetableLecture(Timetable timetable, Lecture lecture) {
+        this.timetable = timetable;
+        this.lecture = lecture;
+        // 양방향 매핑
+        timetable.getTimetableLectures().add(this);
+    }
 }

@@ -5,19 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.domain.member.dto.*;
 import org.fiddich.api.domain.member.MemberService;
 import lombok.RequiredArgsConstructor;
-import org.fiddich.coreinfradomain.domain.Member.SchoolNameConverter;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
-import org.jsoup.Connection;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.List;
-import java.util.NoSuchElementException;
 
 @Slf4j
 @RestController

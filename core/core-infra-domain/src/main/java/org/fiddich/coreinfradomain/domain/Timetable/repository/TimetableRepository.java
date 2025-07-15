@@ -129,7 +129,11 @@ public class TimetableRepository {
                 .executeUpdate();
     }
 
-
+    public void resetAllRepresentFlags(Long memberId) {
+        em.createQuery("UPDATE Timetable t SET t.isRepresent = false WHERE t.member.id = :memberId")
+                .setParameter("memberId", memberId)
+                .executeUpdate();
+    }
 
 
 

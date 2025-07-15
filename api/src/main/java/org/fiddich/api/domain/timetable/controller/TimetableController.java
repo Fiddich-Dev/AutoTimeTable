@@ -3,6 +3,7 @@ package org.fiddich.api.domain.timetable.controller;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.fiddich.api.domain.timetable.EverytimeService;
 import org.fiddich.api.domain.timetable.dto.*;
 import org.fiddich.api.domain.timetable.TimetableService;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
@@ -17,6 +18,7 @@ import java.util.List;
 public class TimetableController {
     // 시간표에 커스텀 시간표 안뜬다, 저장은 됨
     private final TimetableService timetableService;
+    private final EverytimeService everytimeService;
 
     @PostMapping("/timetables")
     public ApiResponse<Long> saveTimetable(@RequestBody CreateTimetableDto createTimetableDto) {
@@ -58,7 +60,7 @@ public class TimetableController {
     @GetMapping("/timetables/everytime")
     public ApiResponse<List<CreateTimetableWithExternalLecturesDto>> getAlleverytime(@RequestParam String url) throws Exception {
         log.info("에타 시간표 모두 가져오기: {}", url);
-        List<CreateTimetableWithExternalLecturesDto> timetables = timetableService.allEverytimeMapping(url);
+        List<CreateTimetableWithExternalLecturesDto> timetables = everytimeService.allEverytimeMapping(url);
         return ApiResponse.onSuccess(timetables);
     }
 
