@@ -7,6 +7,8 @@ import org.fiddich.api.domain.timetable.dto.InternalLectureDto;
 import org.fiddich.coreinfradomain.domain.Lecture.repository.LectureRepository;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -18,6 +20,9 @@ public class LectureService {
 
     // 커스텀 강의는 안나와야함
     public List<InternalLectureDto> searchLecturesByKeyword(String keyword) {
+        if(keyword == null || keyword.isEmpty()) {
+            return Collections.emptyList();
+        }
         return lectureRepository.searchByAutoField(keyword).stream()
                 .map(InternalLectureDto::new)
                 .toList();

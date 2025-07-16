@@ -36,4 +36,31 @@ public class TimeParser {
         return result.toString();
     }
 
+    public static String timeParse(String day, String start, String end) {
+        StringBuilder time = new StringBuilder();
+        time.append(numToDay(day)).append(numToTime(start)).append("-").append(numToTime(end));
+        return time.toString();
+    }
+
+
+    private static String numToDay(String num) {
+        return switch (num) {
+            case "0" -> "월";
+            case "1" -> "화";
+            case "2" -> "수";
+            case "3" -> "목";
+            case "4" -> "금";
+            case "5" -> "토";
+            case "6" -> "일";
+            default -> throw new IllegalArgumentException("잘못된 요일: " + num);
+        };
+    }
+
+    private static String numToTime(String time) {
+        int num = Integer.parseInt(time);
+        int hour = num * 5 / 60;
+        int minute = num * 5 % 60;
+        return String.format("%d%02d", hour, minute);
+    }
+
 }

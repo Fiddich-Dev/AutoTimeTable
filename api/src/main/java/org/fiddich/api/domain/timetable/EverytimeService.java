@@ -5,7 +5,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.domain.timetable.dto.CreateTimetableWithExternalLecturesDto;
 import org.fiddich.api.domain.timetable.dto.ExternalLectureDto;
 import org.fiddich.api.domain.timetable.helper.TimeParser;
-import org.fiddich.coreinfradomain.TimetableLecture;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 import org.fiddich.coreinfradomain.domain.Lecture.repository.LectureRepository;
 import org.fiddich.coreinfradomain.domain.Member.Member;
@@ -40,12 +39,11 @@ public class EverytimeService {
     // 에타 시간표를 내 DB에 저장하기(내 DB에 없는 강의는 강의DB에 먼저 저장하고 저장)
     public void createTimetableWithExternalLectures(CreateTimetableWithExternalLecturesDto createTimetableWithExternalLecturesDto) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Member member = memberRepository.findById(customUserDetails.getId())
-                .orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        Member member = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
 
         String year = createTimetableWithExternalLecturesDto.getYear();
         String semester = createTimetableWithExternalLecturesDto.getSemester();
-        String name = createTimetableWithExternalLecturesDto.getTimeTableName();
+        String timetableName = createTimetableWithExternalLecturesDto.getTimeTableName();
         boolean isRepresent = createTimetableWithExternalLecturesDto.isRepresent();
 
         if(isRepresent) {
@@ -56,17 +54,17 @@ public class EverytimeService {
                 .member(member)
                 .year(year)
                 .semester(semester)
-                .timeTableName(name)
+                .timeTableName(timetableName)
                 .isRepresent(isRepresent)
                 .build();
 
-        List<TimetableLecture> timetableLectures = new ArrayList<>();
+        List<Lecture> lectures = new ArrayList<>();
 
         for (ExternalLectureDto extDto : createTimetableWithExternalLecturesDto.getLectures()) {
             // 1. 내부 DB에서 같은 강의 있는지 확인
             Optional<Lecture> optionalLecture = lectureRepository.findByCodeSection(extDto.getCodeSection());
 
-            // 2. codeSection으로 없으면 subjectId로 조회 시도
+            // 2. subjectId(codeSection)으로 조회 시도
             if (optionalLecture.isEmpty()) {
                 optionalLecture = lectureRepository.findByCodeSection(extDto.getSubjectId());
             }
@@ -83,6 +81,7 @@ public class EverytimeService {
                         .professor(extDto.getProfessor())
                         .time(extDto.getTime())
                         .credit(extDto.getCredit())
+                        .member(member)
                         .build();
 
                 lectureRepository.save(newLecture);
@@ -90,16 +89,11 @@ public class EverytimeService {
                 return newLecture;
             });
 
-            // 2. 시간표에 매핑
-            TimetableLecture tl = new TimetableLecture();
-            tl.setTimetable(timetable);
-            tl.setLecture(lecture);
-            timetableLectures.add(tl);
+            lectures.add(lecture);
         }
 
-        timetable.setTimetableLectures(timetableLectures);
+        timetable.changeLectures(lectures);
         timetableRepository.save(timetable);
-
     }
 
 
@@ -144,6 +138,7 @@ public class EverytimeService {
         return createTimetableWithExternalLecturesDtos;
     }
 
+
     // 특정 identifier로 시간표 조회
     public List<ExternalLectureDto> getEveryTimetable(String identifier) throws IOException {
 
@@ -167,8 +162,20 @@ public class EverytimeService {
             String subjectId = subject.attr("id");
             String fullCode = subject.selectFirst("internal").attr("value"); // codeSection
             String codePrefix = fullCode.split("-")[0]; // code
-            String rawTime = subject.selectFirst("time").attr("value"); // 변환전 시간
-            String time = TimeParser.timeParse(rawTime);
+
+            Elements rawTimes = subject.selectFirst("time").select("data");
+            StringBuilder time = new StringBuilder();
+            for(Element rawTime : rawTimes) {
+                String day = rawTime.attr("day");
+                String start = rawTime.attr("starttime");
+                String end = rawTime.attr("endtime");
+                time.append(TimeParser.timeParse(day, start, end)).append(",");
+            }
+            if (!time.isEmpty()) {
+                time.setLength(time.length() - 1); // 마지막 문자 제거 (예: ',' 제거)
+            }
+            String finalTime = time.toString(); // String으로 변환
+
             String professor = subject.selectFirst("professor").attr("value");
             String name = subject.selectFirst("name").attr("value");
             String credit = subject.selectFirst("credit").attr("value");
@@ -178,7 +185,7 @@ public class EverytimeService {
             externalLectureDto.setCodeSection(fullCode);
             externalLectureDto.setProfessor(professor);
             externalLectureDto.setName(name);
-            externalLectureDto.setTime(time);
+            externalLectureDto.setTime(finalTime);
             externalLectureDto.setCredit(credit);
 
             if(time == null || time.isEmpty()) {
@@ -189,4 +196,25 @@ public class EverytimeService {
         }
         return externalLectureDtos;
     }
+
+    public String numToDay(String num) {
+        return switch (num) {
+            case "0" -> "월";
+            case "1" -> "화";
+            case "2" -> "수";
+            case "3" -> "목";
+            case "4" -> "금";
+            case "5" -> "토";
+            case "6" -> "일";
+            default -> throw new IllegalArgumentException("잘못된 요일: " + num);
+        };
+    }
+
+    public String numToTime(String time) {
+        int num = Integer.parseInt(time);
+        int hour = num * 5 / 60;
+        int minute = num * 5 % 60;
+        return String.format("%d%02d", hour, minute);
+    }
+
 }

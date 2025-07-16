@@ -53,7 +53,7 @@ public class TimetableController {
     @PostMapping("/timetables/everytime")
     public ApiResponse<Void> saveEveryTimetable(@RequestBody CreateTimetableWithExternalLecturesDto createTimetableWithExternalLecturesDto) {
         log.info("에타 시간표 저장: {]", createTimetableWithExternalLecturesDto);
-        timetableService.createTimetableWithExternalLectures(createTimetableWithExternalLecturesDto);
+        everytimeService.createTimetableWithExternalLectures(createTimetableWithExternalLecturesDto);
         return ApiResponse.onSuccess(null);
     }
 

@@ -57,26 +57,21 @@ public class TimetableRepository {
         return Optional.ofNullable(timetable);
     }
 
-    public Timetable findMainByMemberIdWithLectures(Long memberId, String year, String semester) {
-        String jpql = """
-        select t from Timetable t
-        join fetch t.timetableLectures tl
-        join fetch tl.lecture l
-        where t.member.id = :memberId
-          and t.isRepresent = true
-          and t.year = :year
-          and t.semester = :semester
-    """;
+    public Optional<Timetable> findMainByMemberIdWithLectures(Long memberId, String year, String semester) {
 
-        try {
-            return em.createQuery(jpql, Timetable.class)
-                    .setParameter("memberId", memberId)
-                    .setParameter("year", year)
-                    .setParameter("semester", semester)
-                    .getSingleResult();
-        } catch (NoResultException e) {
-            return null; // 혹은 예외를 다시 던지거나 Optional.ofNullable() 처리
-        }
+         Timetable timetable = em.createQuery("select t from Timetable t" +
+                        " join fetch t.timetableLectures tl" +
+                        " join fetch tl.lecture l" +
+                        " where t.member.id = :memberId" +
+                        " and t.isRepresent = true" +
+                        " and t.year = :year" +
+                        " and t.semester = :semester", Timetable.class)
+                .setParameter("memberId", memberId)
+                .setParameter("year", year)
+                .setParameter("semester", semester)
+                .getSingleResult();
+
+        return Optional.ofNullable(timetable);
     }
 
     public List<Timetable> findAll() {

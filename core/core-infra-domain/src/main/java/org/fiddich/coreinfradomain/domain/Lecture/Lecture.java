@@ -23,6 +23,10 @@ public class Lecture {
     @JoinColumn(name = "category_id")
     private Category category;
 
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "member_id")
+    private Member member;
+
     private String code;
     private String codeSection;
     private String name;

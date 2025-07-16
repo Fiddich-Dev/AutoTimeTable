@@ -23,6 +23,7 @@ import org.jsoup.nodes.Document;
 import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 import java.io.IOException;
+import java.sql.Time;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -93,6 +94,7 @@ public class TimetableService {
     }
     // 완료
     public void deleteTimetable(Long timetableId) {
+        lectureRepository.deleteCustomLectureByTimetable(timetableId);
         timetableRepository.deleteTimetable(timetableId);
     }
 
@@ -106,7 +108,7 @@ public class TimetableService {
         timetableRepository.updateMainTimetable(timetableId);
     }
 
-    // 테스트 필요
+    // 자동생성
     public List<List<InternalLectureDto>> createTimetable(CreateTimetableOptionDto optionDto) {
         int targetMajorCnt = optionDto.getTargetMajorCnt();
         int targetCultureCnt = optionDto.getTargetCultureCnt();
@@ -151,237 +153,46 @@ public class TimetableService {
                                 .collect(Collectors.toList())
                 )
                 .collect(Collectors.toList());
-
     }
 
-    // 에타 시간표를 내 DB에 저장하기(내 DB에 없는 강의는 강의DB에 먼저 저장하고 저장)
-    public void createTimetableWithExternalLectures(CreateTimetableWithExternalLecturesDto createTimetableWithExternalLecturesDto) {
-        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Member member = memberRepository.findById(customUserDetails.getId())
-                .orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
-
-        String year = createTimetableWithExternalLecturesDto.getYear();
-        String semester = createTimetableWithExternalLecturesDto.getSemester();
-        String name = createTimetableWithExternalLecturesDto.getTimeTableName();
-        boolean isRepresent = createTimetableWithExternalLecturesDto.isRepresent();
-
-        if(isRepresent) {
-            List<Timetable> timetables = timetableRepository.findByMember(member.getId());
-            for(Timetable timetable : timetables) {
-                timetable.setRepresent(false);
-            }
-        }
-
-        Timetable timetable = Timetable.builder()
-                .member(member)
-                .year(year)
-                .semester(semester)
-                .timeTableName(name)
-                .isRepresent(isRepresent)
-                .build();
-
-
-
-        List<TimetableLecture> timetableLectures = new ArrayList<>();
-
-        for (ExternalLectureDto extDto : createTimetableWithExternalLecturesDto.getLectures()) {
-            // 1. 내부 DB에서 같은 강의 있는지 확인
-            Optional<Lecture> optionalLecture = lectureRepository.findByCodeSection(extDto.getCodeSection());
-
-            // 2. codeSection으로 없으면 subjectId로 조회 시도
-            if (optionalLecture.isEmpty()) {
-                optionalLecture = lectureRepository.findByCodeSection(extDto.getSubjectId());
-            }
-
-            Lecture lecture = optionalLecture.orElseGet(() -> {
-                // 없다면 새로 저장
-                System.out.println("없는 강의");
-                String codeSection = extDto.getSubjectId();
-
-                Lecture newLecture = Lecture.builder()
-                        .code(extDto.getCode())
-                        .codeSection(codeSection)
-                        .name(extDto.getName())
-                        .professor(extDto.getProfessor())
-                        .time(extDto.getTime())
-                        .credit(extDto.getCredit())
-                        .build();
-
-                lectureRepository.save(newLecture);
-
-                return newLecture;
-            });
-
-            // 2. 시간표에 매핑
-            TimetableLecture tl = new TimetableLecture();
-            tl.setTimetable(timetable);
-            tl.setLecture(lecture);
-            timetableLectures.add(tl);
-        }
-
-        timetable.setTimetableLectures(timetableLectures);
-        timetableRepository.save(timetable);
-
-    }
-
-
-    // 에타의 모든 시간표 가져오기(조회만)
-    public List<CreateTimetableWithExternalLecturesDto> allEverytimeMapping(String url) throws IOException {
-        // 사용자 조회
-        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Member member = memberRepository.findById(customUserDetails.getId())
-                .orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
-
-        // 에타 시간표id 추출
-        String[] parts = url.split("/");
-        String identifier = parts[parts.length - 1].replace("@", "");
-
-        // 에타 서버에 요청 보내기
-        Document doc = Jsoup.connect("https://api.everytime.kr/find/timetable/table/friend")
-                .method(Connection.Method.POST)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36")
-                .referrer("https://everytime.kr/")
-                .data("identifier", identifier)
-                .data("friendInfo", "true")
-                .timeout(5000)
-                .post(); // ← 여기 수정
-
-        // 에타에 저장된 모든 시간표id, 학년도 정보
-        Elements primaryTables = doc.select("primaryTable");
-        // 조회할 시간표
-        List<CreateTimetableWithExternalLecturesDto> createTimetableWithExternalLecturesDtos = new ArrayList<>();
-
-        for (Element primaryTable : primaryTables) {
-
-            String year = primaryTable.attr("year");
-            String semester = primaryTable.attr("semester");
-            identifier = primaryTable.attr("identifier");
-
-            List<ExternalLectureDto> externalLectureDtos = getEveryTimetable(identifier);
-
-            CreateTimetableWithExternalLecturesDto createTimetableWithExternalLecturesDto = new CreateTimetableWithExternalLecturesDto();
-            createTimetableWithExternalLecturesDto.setYear(year);
-            createTimetableWithExternalLecturesDto.setSemester(semester);
-            createTimetableWithExternalLecturesDto.setRepresent(false); // 일단 조회만 하니까 메인시간표로 설정X
-            createTimetableWithExternalLecturesDto.setLectures(externalLectureDtos);
-
-            createTimetableWithExternalLecturesDtos.add(createTimetableWithExternalLecturesDto);
-        }
-
-        return createTimetableWithExternalLecturesDtos;
-    }
-
-    // 특정 identifier로 시간표 조회
-    public List<ExternalLectureDto> getEveryTimetable(String identifier) throws IOException {
-
-        Document doc = Jsoup.connect("https://api.everytime.kr/find/timetable/table/friend")
-                .method(Connection.Method.POST)
-                .userAgent("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/120.0.0.0 Safari/537.36")
-                .referrer("https://everytime.kr/")
-                .data("identifier", identifier)
-                .data("friendInfo", "true")
-                .timeout(5000)
-                .post(); // ← 여기 수정
-
-        Element tableElement = doc.selectFirst("table");
-        assert tableElement != null;
-        String year = tableElement.attr("year");
-        String semester = tableElement.attr("semester");
-        Elements subjects = tableElement.select("subject");
-
-        List<ExternalLectureDto> externalLectureDtos = new ArrayList<>();
-
-        for (Element subject : subjects) {
-            String subjectId = subject.attr("id"); // 가장 기본적인 방법
-
-            ExternalLectureDto lecture = new ExternalLectureDto();
-
-            String fullCode = subject.selectFirst("internal").attr("value"); // codeSection
-            String codePrefix = fullCode.split("-")[0]; // code
-            String rawTime = subject.selectFirst("time").attr("value"); // 변환전 시간
-            String time = TimeParser.timeParse(rawTime);
-
-            lecture.setCode(codePrefix);
-            lecture.setCodeSection(fullCode);
-            lecture.setProfessor(subject.selectFirst("professor").attr("value"));
-            lecture.setName(subject.selectFirst("name").attr("value"));
-            lecture.setTime(time);
-            lecture.setCredit(subject.selectFirst("credit").attr("value"));
-
-            lecture.setSubjectId(subjectId);
-
-            // 필요 시 추가 필드 매핑
-            externalLectureDtos.add(lecture);
-            System.out.println(lecture.toString());
-        }
-        return externalLectureDtos;
-    }
-
-
-
-    // 겹치는 강의만 가져오기
+    // 겹치는 강의에 회원정보 추가
     public List<CompareTimetableDto> compareTimetable(CompareMemberDto compareMemberDto) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Long myId = customUserDetails.getId();
         String year = compareMemberDto.getYear();
         String semester = compareMemberDto.getSemester();
 
-        // 🔹 내 대표 시간표에서 강의 목록 조회 (JPQL)
-        List<Lecture> myLectures = em.createQuery("""
-        select l from Timetable t
-        join t.timetableLectures tl
-        join tl.lecture l
-        where t.member.id = :memberId
-        and t.isRepresent = true
-        and t.year = :year
-        and t.semester = :semester
-    """, Lecture.class)
-                .setParameter("memberId", myId)
-                .setParameter("year", year)
-                .setParameter("semester", semester)
-                .getResultList();
+        // 내 대표 시간표에서 강의 목록 조회 (강의로 바로 조회가능
+        Timetable myMainTimetable = timetableRepository.findMainByMemberIdWithLectures(myId, year, semester).orElseThrow(() -> new NoSuchElementException("메인시간표가 없습니다."));
+        List<Lecture> myLectures = myMainTimetable.getTimetableLectures().stream().map(TimetableLecture::getLecture).toList();
 
         // 🔹 결과 초기화
-        List<CompareTimetableDto> result = myLectures.stream()
+        List<CompareTimetableDto> compareTimetableDtos = myLectures.stream()
                 .map(CompareTimetableDto::new)
-                .collect(Collectors.toList());
+                .toList();
 
-        // 🔹 친구들 시간표 비교
-        for (Long memberId : compareMemberDto.getMemberIds()) {
-            Member member = em.find(Member.class, memberId);
-            if (member == null) continue;
 
-            // 친구의 대표 시간표 강의 조회
-            List<Lecture> lectures = em.createQuery("""
-            select l from Timetable t
-            join t.timetableLectures tl
-            join tl.lecture l
-            where t.member.id = :memberId
-            and t.isRepresent = true
-            and t.year = :year
-            and t.semester = :semester
-        """, Lecture.class)
-                    .setParameter("memberId", memberId)
-                    .setParameter("year", year)
-                    .setParameter("semester", semester)
-                    .getResultList();
+        for(Long memberId : compareMemberDto.getMemberIds()) {
+            Member friend = memberRepository.findById(memberId).orElseThrow(() -> new NoSuchElementException("회원이 없습니다."));
+            Timetable friendMainTimetable = timetableRepository.findMainByMemberIdWithLectures(friend.getId(), year, semester).orElse(null);
 
-            // 겹치는 강의 처리
-            for (Lecture lecture : lectures) {
-                for (CompareTimetableDto dto : result) {
-                    if (dto.getInternalLectureDto().getId().equals(lecture.getId())) {
-                        dto.getUsernames().add(member.getUsername());
-                        dto.getStudentIds().add(member.getStudentId());
-                        break;
+            if(friendMainTimetable != null) {
+                List<Lecture> friendLectures = friendMainTimetable.getTimetableLectures().stream().map(TimetableLecture::getLecture).toList();
+
+                for (Lecture friendLecture : friendLectures) {
+                    for(CompareTimetableDto dto : compareTimetableDtos) {
+                        if(dto.getInternalLectureDto().getId().equals(friendLecture.getId())) {
+                            dto.getUsernames().add(friend.getUsername());
+                            dto.getStudentIds().add(friend.getStudentId());
+                            break;
+                        }
                     }
                 }
+
             }
         }
 
-        // 🔹 겹치는 강의만 필터링
-        return result.stream()
-                .filter(dto -> !dto.getStudentIds().isEmpty())
-                .collect(Collectors.toList());
+        return compareTimetableDtos;
     }
 
 
@@ -391,29 +202,19 @@ public class TimetableService {
         String year = compareMemberDto.getYear();
         String semester = compareMemberDto.getSemester();
 
-        // ✅ 중복 허용을 위해 Set 대신 List 사용
         List<Lecture> result = new ArrayList<>();
 
+        // 나도 포함
         compareMemberDto.getMemberIds().add(customUserDetails.getId());
+
         for (Long memberId : compareMemberDto.getMemberIds()) {
 
-            List<Lecture> lectures = em.createQuery("""
-            select l from Timetable t
-            join t.timetableLectures tl
-            join tl.lecture l
-            where t.member.id = :memberId
-            and t.isRepresent = true
-            and t.year = :year
-            and t.semester = :semester
-        """, Lecture.class)
-                    .setParameter("memberId", memberId)
-                    .setParameter("year", year)
-                    .setParameter("semester", semester)
-                    .getResultList();
+            Timetable timetable = timetableRepository.findMainByMemberIdWithLectures(memberId, year, semester).orElse(null);
 
-            result.addAll(
-                lectures
-            );
+            if (timetable != null) {
+                List<Lecture> lectures = timetable.getTimetableLectures().stream().map(TimetableLecture::getLecture).toList();
+                result.addAll(lectures);
+            }
         }
 
         return result.stream()

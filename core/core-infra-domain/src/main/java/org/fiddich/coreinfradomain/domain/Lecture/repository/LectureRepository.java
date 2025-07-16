@@ -76,11 +76,12 @@ public class LectureRepository {
 
     public List<Lecture> searchByAutoField(String keyword) {
         return em.createQuery("""
-        select l from Lecture l
-        where l.name like :kw
-           or l.professor like :kw
-           or l.codeSection like :kw
-    """, Lecture.class)
+    select l from Lecture l
+    where (l.name like :kw
+        or l.professor like :kw
+        or l.codeSection like :kw)
+      and l.member is null
+""", Lecture.class)
                 .setParameter("kw", "%" + keyword + "%")
                 .getResultList();
     }
@@ -90,6 +91,27 @@ public class LectureRepository {
                 .setParameter("year", year)
                 .setParameter("semester", semester)
                 .getResultList();
+    }
+
+    public void deleteCustomLectureByTimetable(Long timetableId) {
+        em.createQuery("""
+    DELETE FROM TimetableLecture tl
+    WHERE tl.timetable.id = :timetableId
+      AND tl.lecture IN (
+        SELECT l FROM Lecture l WHERE l.member IS NOT NULL
+      )
+""")
+                .setParameter("timetableId", timetableId)
+                .executeUpdate();
+
+        em.createQuery("""
+    DELETE FROM Lecture l
+    WHERE l.member IS NOT NULL
+      AND NOT EXISTS (
+        SELECT 1 FROM TimetableLecture tl WHERE tl.lecture = l
+      )
+""")
+                .executeUpdate();
     }
 
 }
