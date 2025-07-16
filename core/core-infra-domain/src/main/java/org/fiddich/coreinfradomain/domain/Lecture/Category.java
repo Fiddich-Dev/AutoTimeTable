@@ -11,9 +11,10 @@ import java.util.List;
 @Entity
 @Getter
 @Setter
+@NoArgsConstructor
 public class Category {
 
-    @Id
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "category_id")
     private Long id;
 
@@ -32,4 +33,20 @@ public class Category {
 
     private String semester;
 
+    // 커스텀 강의 카테고리 만들기
+
+
+    public Category(String year, String semester) {
+        this.school = new School(13L, "성균관대학교");
+        this.name = "커스텀강의";
+        this.year = year;
+        this.semester = semester;
+    }
+
+    public Category(String year, String semester, String name) {
+        this.school = new School(13L, "성균관대학교");
+        this.name = name;
+        this.year = year;
+        this.semester = semester;
+    }
 }

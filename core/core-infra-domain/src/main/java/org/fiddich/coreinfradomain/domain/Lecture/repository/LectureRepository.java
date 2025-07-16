@@ -25,9 +25,11 @@ public class LectureRepository {
     }
 
 
-    public Optional<Lecture> findByCodeSection(String codeSection) {
-        List<Lecture> result = em.createQuery("select l from Lecture l where l.codeSection = :codeSection", Lecture.class)
+    public Optional<Lecture> findByCodeSection(String codeSection, String year, String semester) {
+        List<Lecture> result = em.createQuery("select l from Lecture l where l.codeSection = :codeSection and l.category.year = :year and l.category.semester = :semester", Lecture.class)
                 .setParameter("codeSection", codeSection)
+                .setParameter("year", year)
+                .setParameter("semester", semester)
                 .getResultList();
         if (result.isEmpty()) {
             return Optional.empty();

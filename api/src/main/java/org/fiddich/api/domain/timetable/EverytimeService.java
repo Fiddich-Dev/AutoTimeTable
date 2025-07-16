@@ -1,5 +1,6 @@
 package org.fiddich.api.domain.timetable;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.domain.timetable.dto.CreateTimetableWithExternalLecturesDto;
@@ -28,6 +29,7 @@ import java.util.Optional;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class EverytimeService {
 
@@ -62,11 +64,11 @@ public class EverytimeService {
 
         for (ExternalLectureDto extDto : createTimetableWithExternalLecturesDto.getLectures()) {
             // 1. 내부 DB에서 같은 강의 있는지 확인
-            Optional<Lecture> optionalLecture = lectureRepository.findByCodeSection(extDto.getCodeSection());
+            Optional<Lecture> optionalLecture = lectureRepository.findByCodeSection(extDto.getCodeSection(), year, semester);
 
             // 2. subjectId(codeSection)으로 조회 시도
             if (optionalLecture.isEmpty()) {
-                optionalLecture = lectureRepository.findByCodeSection(extDto.getSubjectId());
+                optionalLecture = lectureRepository.findByCodeSection(extDto.getSubjectId(), year, semester);
             }
 
             Lecture lecture = optionalLecture.orElseGet(() -> {
