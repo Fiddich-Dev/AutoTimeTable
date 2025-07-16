@@ -25,12 +25,7 @@ public class TimetableRepository {
         em.persist(timetable);
     }
 
-    public Optional<Timetable> findById(Long id) {
-        return Optional.ofNullable(em.find(Timetable.class, id));
-    }
-
     public Optional<Timetable> findByIdWithTimetableLectures(Long id) {
-
         Timetable timetable = em.createQuery(
                 "select t from Timetable t " +
                 "join fetch t.timetableLectures tl " +
@@ -74,11 +69,6 @@ public class TimetableRepository {
         return Optional.ofNullable(timetable);
     }
 
-    public List<Timetable> findAll() {
-        return em.createQuery("select t from Timetable t", Timetable.class)
-                .getResultList();
-    }
-
     public List<Timetable> findByMember(Long memberId) {
         return em.createQuery("select t from Timetable t where t.member.id = :memberId", Timetable.class)
                 .setParameter("memberId", memberId)
@@ -106,12 +96,6 @@ public class TimetableRepository {
         }
     }
 
-    public void deleteTimetableLecture(Long timetableId) {
-        em.createQuery("delete from TimetableLecture tl where tl.timetable.id = :timetableId")
-                .setParameter("timetableId", timetableId)
-                .executeUpdate();
-    }
-
     public void clearMainTimetable(Long memberId) {
         em.createQuery("update Timetable t set t.isRepresent = false where t.member.id = :memberId")
                 .setParameter("memberId", memberId)
@@ -124,8 +108,9 @@ public class TimetableRepository {
                 .executeUpdate();
     }
 
-    public void resetAllRepresentFlags(Long memberId) {
-        em.createQuery("UPDATE Timetable t SET t.isRepresent = false WHERE t.member.id = :memberId")
+
+    public void deleteAllTimetableByMemberId(Long memberId) {
+        em.createQuery("delete from Timetable t where t.member.id = :memberId")
                 .setParameter("memberId", memberId)
                 .executeUpdate();
     }

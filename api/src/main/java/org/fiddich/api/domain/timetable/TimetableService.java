@@ -2,10 +2,9 @@ package org.fiddich.api.domain.timetable;
 
 import jakarta.persistence.EntityManager;
 import org.fiddich.api.domain.timetable.dto.*;
-import org.fiddich.api.domain.timetable.helper.TimeParser;
 import org.fiddich.api.domain.timetable.helper.TimetableGenerator;
 import org.fiddich.api.domain.timetable.helper.TimetableScorer;
-import org.fiddich.coreinfradomain.TimetableLecture;
+import org.fiddich.coreinfradomain.domain.Timetable.TimetableLecture;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 import org.fiddich.coreinfradomain.domain.Lecture.repository.LectureRepository;
 import org.fiddich.coreinfradomain.domain.Member.Member;
@@ -14,16 +13,10 @@ import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
 import org.fiddich.coreinfradomain.domain.Timetable.repository.TimetableRepository;
 import lombok.RequiredArgsConstructor;
 import org.fiddich.coreinfrasecurity.user.CustomUserDetails;
-import org.jsoup.Connection;
-import org.jsoup.Jsoup;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-import org.jsoup.nodes.Document;
-import org.jsoup.nodes.Element;
-import org.jsoup.select.Elements;
-import java.io.IOException;
-import java.sql.Time;
+
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -97,6 +90,7 @@ public class TimetableService {
         lectureRepository.deleteCustomLectureByTimetable(timetableId);
         timetableRepository.deleteTimetable(timetableId);
     }
+
 
     // 완료
     public void changeMainTimetable(TimetableIdDto timetableIdDto) {

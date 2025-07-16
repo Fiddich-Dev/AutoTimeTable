@@ -33,13 +33,6 @@ public class Friendship {
         this.friendshipStatus = FriendshipStatus.ACCEPTED;
     }
 
-    // 친구요청 보내기
-    public void sendFriendshipRequest(Member requester, Member receiver) {
-        receiver.getReceivedFriendships().add(this);
-        requester.getRequestFriendships().add(this);
-    }
-
-
     @Override
     public boolean equals(Object o) {
         if (o == null || getClass() != o.getClass()) return false;

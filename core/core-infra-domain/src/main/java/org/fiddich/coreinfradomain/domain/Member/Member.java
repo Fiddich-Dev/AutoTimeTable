@@ -21,8 +21,8 @@ public class Member {
     @Column(name = "member_id")
     private Long id;
 
-    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<Timetable> timetables = new ArrayList<>();
+//    @OneToMany(mappedBy = "member", cascade = CascadeType.ALL, orphanRemoval = true)
+//    private List<Timetable> timetables = new ArrayList<>();
 
     private String studentId;
     private String password;

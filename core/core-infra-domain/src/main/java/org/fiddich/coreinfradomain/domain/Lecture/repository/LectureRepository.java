@@ -18,34 +18,12 @@ public class LectureRepository {
 
     private final EntityManager em;
 
-    public Optional<Lecture> findById(Long id) {
-        Lecture lecture = em.find(Lecture.class, id);
-        return Optional.ofNullable(lecture);
-    }
-
-    public List<Lecture> findByDepartment(String categoryName) {
-        return em.createQuery("select l from Lecture l where l.category.name = :categoryName", Lecture.class)
-                .setParameter("categoryName", categoryName)
-                .getResultList();
-    }
-
-    public List<Lecture> findAllByCategoryIds(List<Long> categoryIds) {
-        return em.createQuery("select l from Lecture l where l.category.id in :categoryIds", Lecture.class)
-                .setParameter("categoryIds", categoryIds)
-                .getResultList();
-    }
-
     public List<Lecture> findAllByCategoryIdsWithParentCategory(List<Long> categoryIds) {
         return em.createQuery("select l from Lecture l join fetch l.category c where c.id in :categoryIds", Lecture.class)
                 .setParameter("categoryIds", categoryIds)
                 .getResultList();
     }
 
-//    public List<Lecture> findByIds(List<Long> ids) {
-//        return em.createQuery("select l from Lecture l where l.id in :ids", Lecture.class)
-//                .setParameter("ids", ids)
-//                .getResultList();
-//    }
 
     public Optional<Lecture> findByCodeSection(String codeSection) {
         List<Lecture> result = em.createQuery("select l from Lecture l where l.codeSection = :codeSection", Lecture.class)
@@ -56,11 +34,6 @@ public class LectureRepository {
         } else {
             return Optional.of(result.get(0));
         }
-    }
-
-    public List<Lecture> findAll() {
-        return em.createQuery("select l from Lecture l", Lecture.class)
-                .getResultList();
     }
 
     public List<Lecture> findAllByIds(List<Long> lectureIds) {
@@ -111,6 +84,30 @@ public class LectureRepository {
         SELECT 1 FROM TimetableLecture tl WHERE tl.lecture = l
       )
 """)
+                .executeUpdate();
+    }
+
+    public void deleteCustomLecturesByMember(Long memberId) {
+        // 1단계: 시간표에서 lecture 삭제 (해당 member의 시간표 + 커스텀 강의)
+        em.createQuery("""
+        DELETE FROM TimetableLecture tl
+        WHERE tl.timetable.member.id = :memberId
+          AND tl.lecture IN (
+              SELECT l FROM Lecture l WHERE l.member.id = :memberId
+          )
+    """)
+                .setParameter("memberId", memberId)
+                .executeUpdate();
+
+        // 2단계: orphan된 lecture 삭제 (커스텀 강의 중, 더 이상 timetable에 포함되지 않은 것)
+        em.createQuery("""
+        DELETE FROM Lecture l
+        WHERE l.member.id = :memberId
+          AND NOT EXISTS (
+              SELECT 1 FROM TimetableLecture tl WHERE tl.lecture = l
+          )
+    """)
+                .setParameter("memberId", memberId)
                 .executeUpdate();
     }
 

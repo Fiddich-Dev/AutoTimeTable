@@ -28,8 +28,8 @@ public class Category {
     private String name;
 
     @Column(name = "`year`")
-    private String year;      // 추가된 필드
+    private String year;
 
-    private String semester;  // 추가된 필드
+    private String semester;
 
 }
