@@ -31,12 +31,11 @@ public class MemberRepository {
     }
 
     public Optional<Member> findByStudentId(String studentId) {
-
-        Member member = em.createQuery("select m from Member m where m.studentId = :studentId", Member.class)
+        List<Member> result = em.createQuery("select m from Member m where m.studentId = :studentId", Member.class)
                 .setParameter("studentId", studentId)
-                .getSingleResult();
+                .getResultList();
 
-        return Optional.ofNullable(member);
+        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 
     public List<Member> findByStudentIdContaining(String keyword) {
