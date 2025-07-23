@@ -275,7 +275,7 @@ class FriendServiceTest {
 
         // then
         Assertions.assertThat(searchMemberDtos.size()).isEqualTo(ids.size());
-        
+
         List<SearchMemberDto> pendingFriends = searchMemberDtos.stream()
                 .filter(s -> s.getStatus() == SearchFriendStatus.PENDING)
                 .toList();
