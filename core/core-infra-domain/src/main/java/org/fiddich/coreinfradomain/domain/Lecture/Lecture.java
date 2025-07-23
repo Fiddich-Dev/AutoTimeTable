@@ -7,6 +7,9 @@ import lombok.Getter;
 import lombok.NoArgsConstructor;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 
+import java.util.ArrayList;
+import java.util.List;
+
 @Getter
 @Entity
 @Builder
@@ -32,9 +35,20 @@ public class Lecture {
     private String name;
     private String professor;
     private String type;
+
+//    @OneToMany(mappedBy = "lecture", cascade = CascadeType.ALL, orphanRemoval = true)
+//    private List<LectureTime> lectureTimes = new ArrayList<>();
+
     private String time;
+
     private String place;
     private String credit;
     private String target;
     private String notice;
+
+
+//    public void addLectureTime(LectureTime lectureTime) {
+//        this.lectureTimes.add(lectureTime);
+//        lectureTime.setLecture(this);
+//    }
 }

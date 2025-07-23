@@ -108,14 +108,14 @@ public class Member {
 
     // 친구 삭제
     public void removeFriend(Member friend) {
-        this.getFriends().remove(friend); // 안되는지 테스트
+//        this.getFriends().remove(friend); // 안되는지 테스트 // 진짜 안되네
 //        // 요청자로서 제거
-//        this.requestFriendships.removeIf(f -> f.getReceiver().equals(friend) && f.getFriendshipStatus() == FriendshipStatus.ACCEPTED);
-//        friend.receivedFriendships.removeIf(f -> f.getRequester().equals(this) && f.getFriendshipStatus() == FriendshipStatus.ACCEPTED);
+        this.requestFriendships.removeIf(f -> f.getReceiver().equals(friend) && f.getFriendshipStatus() == FriendshipStatus.ACCEPTED);
+        friend.receivedFriendships.removeIf(f -> f.getRequester().equals(this) && f.getFriendshipStatus() == FriendshipStatus.ACCEPTED);
 //
 //        // 수신자로서 제거
-//        this.receivedFriendships.removeIf(f -> f.getRequester().equals(friend) && f.getFriendshipStatus() == FriendshipStatus.ACCEPTED);
-//        friend.requestFriendships.removeIf(f -> f.getReceiver().equals(this) && f.getFriendshipStatus() == FriendshipStatus.ACCEPTED);
+        this.receivedFriendships.removeIf(f -> f.getRequester().equals(friend) && f.getFriendshipStatus() == FriendshipStatus.ACCEPTED);
+        friend.requestFriendships.removeIf(f -> f.getReceiver().equals(this) && f.getFriendshipStatus() == FriendshipStatus.ACCEPTED);
     }
 
 
