@@ -63,10 +63,10 @@ public class TimetableService {
     // 완료
     public List<InquiryTimeTableDto> getTimetablesAboutYearAndSemester(String year, String semester) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        List<Timetable> timetables = timetableRepository.findTimetablesWithLecturesByMemberId(customUserDetails.getId());
+        List<Timetable> timetables = timetableRepository.findTimetablesWithLecturesByMemberId(customUserDetails.getId(), year, semester);
 
         return timetables.stream()
-                .filter(t -> t.getYear().equals(year) && t.getSemester().equals(semester))
+//                .filter(t -> t.getYear().equals(year) && t.getSemester().equals(semester))
                 .map(InquiryTimeTableDto::new)
                 .toList();
     }
@@ -143,7 +143,7 @@ public class TimetableService {
         return sortedTimetable.stream()
                 .map(innerList ->
                         innerList.stream()
-                                .map(l -> new InternalLectureDto(l.getId(), l.getCode(), l.getCodeSection(), l.getName(), l.getProfessor(), l.getType(), l.getTime(), l.getCredit(), l.getCategory().getName(), l.getNotice())) // 각 Lecture → InternalLectureDto로 변환
+                                .map(l -> new InternalLectureDto(l)) // 각 Lecture → InternalLectureDto로 변환
                                 .collect(Collectors.toList())
                 )
                 .collect(Collectors.toList());
@@ -156,37 +156,51 @@ public class TimetableService {
         String year = compareMemberDto.getYear();
         String semester = compareMemberDto.getSemester();
 
-        // 내 대표 시간표에서 강의 목록 조회 (강의로 바로 조회가능
-        Timetable myMainTimetable = timetableRepository.findMainByMemberIdWithLectures(myId, year, semester).orElseThrow(() -> new NoSuchElementException("메인시간표가 없습니다."));
-        List<Lecture> myLectures = myMainTimetable.getTimetableLectures().stream().map(TimetableLecture::getLecture).toList();
-
-        // 🔹 결과 초기화
-        List<CompareTimetableDto> compareTimetableDtos = myLectures.stream()
-                .map(CompareTimetableDto::new)
+        // 내 메인 시간표에서 강의 목록 조회
+        Timetable myMainTimetable = timetableRepository.findMainByMemberIdWithLectures(myId, year, semester)
+                .orElseThrow(() -> new NoSuchElementException("메인시간표가 없습니다."));
+        List<Lecture> myLectures = myMainTimetable.getTimetableLectures().stream()
+                .map(TimetableLecture::getLecture)
                 .toList();
 
+        // 결과 저장용 Map: 강의 ID → CompareTimetableDto
+        Map<Long, CompareTimetableDto> lectureDtoMap = new HashMap<>();
 
-        for(Long memberId : compareMemberDto.getMemberIds()) {
-            Member friend = memberRepository.findById(memberId).orElseThrow(() -> new NoSuchElementException("회원이 없습니다."));
-            Timetable friendMainTimetable = timetableRepository.findMainByMemberIdWithLectures(friend.getId(), year, semester).orElse(null);
+        for (Long memberId : compareMemberDto.getMemberIds()) {
+            Member friend = memberRepository.findById(memberId)
+                    .orElseThrow(() -> new NoSuchElementException("회원이 없습니다."));
+            Timetable friendMainTimetable = timetableRepository.findMainByMemberIdWithLectures(friend.getId(), year, semester)
+                    .orElse(null);
 
-            if(friendMainTimetable != null) {
-                List<Lecture> friendLectures = friendMainTimetable.getTimetableLectures().stream().map(TimetableLecture::getLecture).toList();
+            if (friendMainTimetable == null) continue;
 
-                for (Lecture friendLecture : friendLectures) {
-                    for(CompareTimetableDto dto : compareTimetableDtos) {
-                        if(dto.getInternalLectureDto().getId().equals(friendLecture.getId())) {
-                            dto.getUsernames().add(friend.getUsername());
-                            dto.getStudentIds().add(friend.getStudentId());
-                            break;
-                        }
-                    }
+            List<Lecture> friendLectures = friendMainTimetable.getTimetableLectures().stream()
+                    .map(TimetableLecture::getLecture)
+                    .toList();
+
+            for (Lecture friendLecture : friendLectures) {
+                Long lectureId = friendLecture.getId();
+
+                // 내 시간표에 포함된 강의인지 확인
+                boolean isOverlapping = myLectures.stream()
+                        .anyMatch(myLecture -> myLecture.getId().equals(lectureId));
+
+                if (!isOverlapping) continue;
+
+                // 이미 있는 DTO를 가져오거나 새로 생성
+                CompareTimetableDto dto = lectureDtoMap.computeIfAbsent(lectureId, id -> new CompareTimetableDto(friendLecture));
+
+                // 중복 없이 정보 추가
+                if (!dto.getUsernames().contains(friend.getUsername())) {
+                    dto.getUsernames().add(friend.getUsername());
                 }
-
+                if (!dto.getStudentIds().contains(friend.getStudentId())) {
+                    dto.getStudentIds().add(friend.getStudentId());
+                }
             }
         }
 
-        return compareTimetableDtos;
+        return new ArrayList<>(lectureDtoMap.values());
     }
 
 

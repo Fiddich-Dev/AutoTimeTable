@@ -22,7 +22,7 @@ public class Category {
     @JoinColumn(name = "parent_id")
     private Category parent;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.LAZY, cascade = CascadeType.ALL)
     @JoinColumn(name = "school_id")
     private School school;
 

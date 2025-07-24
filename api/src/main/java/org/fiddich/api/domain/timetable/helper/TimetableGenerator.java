@@ -2,6 +2,7 @@ package org.fiddich.api.domain.timetable.helper;
 
 import org.fiddich.api.domain.timetable.dto.CreateTimetableFilteringOptionDto;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
+import org.fiddich.coreinfradomain.domain.Lecture.LectureTime;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -86,16 +87,14 @@ public class TimetableGenerator {
     // 겹치는 시간 제외
     boolean canAddLectureAboutTime(Lecture targetLecture) {
         // 2. 시간 겹침 확인
-        String[] times = targetLecture.getTime().split(",");
-        for (String time : times) {
-            if(time.isBlank()) {
+        List<LectureTime> lectureTimes = targetLecture.getLectureTimes();
+        for (LectureTime lectureTime : lectureTimes) {
+            if(lectureTime == null) {
                 continue;
             }
-            int day = dayToInt(time.charAt(0));
-            String[] startAndEnd = time.substring(1).split("-");
-
-            int start = Integer.parseInt(startAndEnd[0]) % 100 + Integer.parseInt(startAndEnd[0]) / 100 * 60;
-            int end = Integer.parseInt(startAndEnd[1]) % 100 + Integer.parseInt(startAndEnd[1]) / 100 * 60;
+            int day = lectureTime.getDay();
+            int start = lectureTime.getStart() * 5;
+            int end = lectureTime.getEnd() * 5;
 
             for (int i = start; i < end; i++) {
                 if (usedTime[day][i] == 1) return false; // 이미 사용 중인 시간
@@ -117,15 +116,14 @@ public class TimetableGenerator {
 
     // 시간 칠하기
     void fillUsedTime(Lecture targetLecture) {
-        String[] times = targetLecture.getTime().split(",");
-        for(String time : times) {
-            if(time.isBlank()) {
+        List<LectureTime> lectureTimes = targetLecture.getLectureTimes();
+        for (LectureTime lectureTime : lectureTimes) {
+            if(lectureTime == null) {
                 continue;
             }
-            int day = dayToInt(time.charAt(0));
-            String[] startAndEnd = time.substring(1).split("-");
-            int start = Integer.parseInt(startAndEnd[0]) % 100 + Integer.parseInt(startAndEnd[0]) / 100 * 60;
-            int end = Integer.parseInt(startAndEnd[1]) % 100 + Integer.parseInt(startAndEnd[1]) / 100 * 60;
+            int day = lectureTime.getDay();
+            int start = lectureTime.getStart() * 5;
+            int end = lectureTime.getEnd() * 5;
 
             for(int i = start; i < end; i++) {
                 usedTime[day][i] = 1;
@@ -135,15 +133,14 @@ public class TimetableGenerator {
 
     // 시간 지우기
     void eraseUsedTime(Lecture targetLecture) {
-        String[] times = targetLecture.getTime().split(",");
-        for(String time : times) {
-            if(time.isBlank()) {
+        List<LectureTime> lectureTimes = targetLecture.getLectureTimes();
+        for (LectureTime lectureTime : lectureTimes) {
+            if(lectureTime == null) {
                 continue;
             }
-            int day = dayToInt(time.charAt(0));
-            String[] startAndEnd = time.substring(1).split("-");
-            int start = Integer.parseInt(startAndEnd[0]) % 100 + Integer.parseInt(startAndEnd[0]) / 100 * 60;
-            int end = Integer.parseInt(startAndEnd[1]) % 100 + Integer.parseInt(startAndEnd[1]) / 100 * 60;
+            int day = lectureTime.getDay();
+            int start = lectureTime.getStart() * 5;
+            int end = lectureTime.getEnd() * 5;
 
             for(int i = start; i < end; i++) {
                 usedTime[day][i] = 0;
@@ -225,11 +222,13 @@ public class TimetableGenerator {
         int morningMinutes = 0;
         int totalMinutes = 0;
         for (Lecture l : lectures) {
-            for (String time : l.getTime().split(",")) {
-                if(time.isBlank()) continue;
-                String[] parts = time.substring(1).split("-");
-                int start = Integer.parseInt(parts[0]) / 100;
-                int end = Integer.parseInt(parts[1]) / 100;
+            List<LectureTime> lectureTimes = l.getLectureTimes();
+            for (LectureTime lectureTime : lectureTimes) {
+                if(lectureTime == null) {
+                    continue;
+                }
+                int start = lectureTime.getStart() * 5;
+                int end = lectureTime.getEnd() * 5;
                 if (start < 12) morningMinutes += (end - start) * 60;
                 totalMinutes += (end - start) * 60;
             }
@@ -240,8 +239,8 @@ public class TimetableGenerator {
     // 요일 수
     int getSchoolDays(List<Lecture> lectures) {
         return (int) lectures.stream()
-                .flatMap(l -> List.of(l.getTime().split(",")).stream())
-                .map(s -> s.charAt(0))
+                .flatMap(l -> l.getLectureTimes().stream())
+                .map(lt -> lt.getDay())
                 .distinct()
                 .count();
     }
@@ -252,15 +251,14 @@ public class TimetableGenerator {
         Map<Integer, List<int[]>> timeByDay = new HashMap<>();
 
         for (Lecture lecture : lectures) {
-            String[] times = lecture.getTime().split(",");
-            for (String time : times) {
-                if (time.isBlank()) continue;
-
-                int day = dayToInt(time.charAt(0));
-                String[] startEnd = time.substring(1).split("-");
-
-                int start = parseTimeToMinutes(startEnd[0]);
-                int end = parseTimeToMinutes(startEnd[1]);
+            List<LectureTime> lectureTimes = lecture.getLectureTimes();
+            for (LectureTime lectureTime : lectureTimes) {
+                if(lectureTime == null) {
+                    continue;
+                }
+                int day = lectureTime.getDay();
+                int start = lectureTime.getStart() * 5;
+                int end = lectureTime.getEnd() * 5;
 
                 timeByDay.computeIfAbsent(day, k -> new ArrayList<>()).add(new int[]{start, end});
             }

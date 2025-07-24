@@ -7,6 +7,7 @@ import org.fiddich.api.domain.timetable.dto.CreateTimetableWithExternalLecturesD
 import org.fiddich.api.domain.timetable.dto.ExternalLectureDto;
 import org.fiddich.api.domain.timetable.helper.TimeParser;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
+import org.fiddich.coreinfradomain.domain.Lecture.LectureTime;
 import org.fiddich.coreinfradomain.domain.Lecture.repository.LectureRepository;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
@@ -76,14 +77,20 @@ public class EverytimeService {
                 System.out.println("없는 강의");
                 String codeSection = extDto.getSubjectId();
 
+                List<LectureTime> lectureTimes = new ArrayList<>();
+                String[] dayAndTimes = extDto.getTime().split(",");
+                for(String dayAndTime : dayAndTimes) {
+                    lectureTimes.add(TimeParser.timeParse(dayAndTime));
+                }
+
                 Lecture newLecture = Lecture.builder()
                         .code(extDto.getCode())
                         .codeSection(codeSection)
                         .name(extDto.getName())
                         .professor(extDto.getProfessor())
-                        .time(extDto.getTime())
                         .credit(extDto.getCredit())
                         .member(member)
+                        .lectureTimes(lectureTimes)
                         .build();
 
                 lectureRepository.save(newLecture);

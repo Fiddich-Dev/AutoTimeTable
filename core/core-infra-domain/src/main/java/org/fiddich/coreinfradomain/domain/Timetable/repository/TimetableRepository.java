@@ -75,17 +75,21 @@ public class TimetableRepository {
                 .getResultList();
     }
 
-    public List<Timetable> findTimetablesWithLecturesByMemberId(Long memberId) {
+    public List<Timetable> findTimetablesWithLecturesByMemberId(Long memberId, String year, String semester) {
         String jpql = """
-        SELECT t
+        SELECT distinct t
         FROM Timetable t
-        JOIN FETCH t.timetableLectures tl
-        JOIN FETCH tl.lecture l
-        JOIN FETCH l.category c
+        LEFT JOIN FETCH t.timetableLectures tl
+        left JOIN FETCH tl.lecture l
+        left JOIN FETCH l.category c
         WHERE t.member.id = :memberId
+        and t.year = :year
+        and t.semester = :semester
     """;
         return em.createQuery(jpql, Timetable.class)
                 .setParameter("memberId", memberId)
+                .setParameter("year", year)
+                .setParameter("semester", semester)
                 .getResultList();
     }
 

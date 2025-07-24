@@ -36,10 +36,11 @@ public class Lecture {
     private String professor;
     private String type;
 
-//    @OneToMany(mappedBy = "lecture", cascade = CascadeType.ALL, orphanRemoval = true)
-//    private List<LectureTime> lectureTimes = new ArrayList<>();
+    @Builder.Default
+    @OneToMany(mappedBy = "lecture", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<LectureTime> lectureTimes = new ArrayList<>();
 
-    private String time;
+//    private String time;
 
     private String place;
     private String credit;
@@ -47,8 +48,8 @@ public class Lecture {
     private String notice;
 
 
-//    public void addLectureTime(LectureTime lectureTime) {
-//        this.lectureTimes.add(lectureTime);
-//        lectureTime.setLecture(this);
-//    }
+    public void addLectureTime(LectureTime lectureTime) {
+        this.lectureTimes.add(lectureTime);
+        lectureTime.setLecture(this);
+    }
 }

@@ -1,6 +1,7 @@
 package org.fiddich.api.domain.timetable.helper;
 
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
+import org.fiddich.coreinfradomain.domain.Lecture.LectureTime;
 
 import java.util.*;
 
@@ -43,32 +44,26 @@ public class TimetableScorer {
     // 오전 수업: 12시 이전 시작
     private int countMorningLectures(List<Lecture> lectures) {
         return (int) lectures.stream()
-                .flatMap(l -> Arrays.stream(l.getTime().split(",")))
-                .map(String::trim)
-                .filter(time -> !time.isEmpty())
-                .mapToInt(t -> parseTimeToMinutes(t.substring(1).split("-")[0]))
-                .filter(start -> start < 12 * 60)
+                .flatMap(l -> l.getLectureTimes().stream())
+                .mapToInt(LectureTime::getStart)
+                .filter(start -> start * 5 < 12 * 60)
                 .count();
     }
 
-    // 오후 수업: 15시 이후 시작
+    // 오후 수업: 13시 이후 시작
     private int countAfternoonLectures(List<Lecture> lectures) {
         return (int) lectures.stream()
-                .flatMap(l -> Arrays.stream(l.getTime().split(",")))
-                .map(String::trim)
-                .filter(time -> !time.isEmpty())
-                .mapToInt(t -> parseTimeToMinutes(t.substring(1).split("-")[0]))
-                .filter(start -> start >= 15 * 60)
+                .flatMap(l -> l.getLectureTimes().stream())
+                .mapToInt(LectureTime::getStart)
+                .filter(start -> start * 5 >= 13 * 60)
                 .count();
     }
 
     // 요일 개수
     private int countDaysWithLectures(List<Lecture> lectures) {
         return (int) lectures.stream()
-                .flatMap(l -> Arrays.stream(l.getTime().split(",")))
-                .map(String::trim)
-                .filter(time -> !time.isEmpty())
-                .map(t -> TimetableGenerator.dayToInt(t.charAt(0)))
+                .flatMap(l -> l.getLectureTimes().stream())
+                .map(LectureTime::getDay)
                 .distinct()
                 .count();
     }
@@ -78,14 +73,14 @@ public class TimetableScorer {
         Map<Integer, List<int[]>> timeByDay = new HashMap<>();
 
         for (Lecture lecture : lectures) {
-            String[] times = lecture.getTime().split(",");
-            for (String time : times) {
-                if (time.isBlank()) continue;
-
-                int day = TimetableGenerator.dayToInt(time.charAt(0));
-                String[] startEnd = time.substring(1).split("-");
-                int start = parseTimeToMinutes(startEnd[0]);
-                int end = parseTimeToMinutes(startEnd[1]);
+            List<LectureTime> lectureTimes = lecture.getLectureTimes();
+            for (LectureTime lectureTime : lectureTimes) {
+                if(lectureTime == null) {
+                    continue;
+                }
+                int day = lectureTime.getDay();
+                int start = lectureTime.getStart() * 5;
+                int end = lectureTime.getEnd() * 5;
 
                 timeByDay.computeIfAbsent(day, k -> new ArrayList<>()).add(new int[]{start, end});
             }
