@@ -52,4 +52,19 @@ public class InternalLectureDto {
         this.time = sb.toString();
     }
 
+    @Override
+    public String toString() {
+        return "InternalLectureDto{" +
+                "id=" + id +
+                ", code='" + code + '\'' +
+                ", codeSection='" + codeSection + '\'' +
+                ", name='" + name + '\'' +
+                ", professor='" + professor + '\'' +
+                ", type='" + type + '\'' +
+                ", time='" + time + '\'' +
+                ", credit='" + credit + '\'' +
+                ", categoryName='" + categoryName + '\'' +
+                ", notice='" + notice + '\'' +
+                '}';
+    }
 } // 내 DB에서 강의를 조회할떄 사용

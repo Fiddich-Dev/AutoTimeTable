@@ -53,6 +53,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
@@ -91,7 +92,12 @@ class TimetableServiceTest {
     // 테스트 회원들
     @BeforeEach
     public void init() {
+        // ID 시퀀스 초기화
+        em.createNativeQuery("ALTER TABLE lecture ALTER COLUMN lecture_id RESTART WITH 1").executeUpdate();
+        em.createNativeQuery("ALTER TABLE member ALTER COLUMN member_id RESTART WITH 1").executeUpdate();
+
         // 멤버 생성
+        ids.clear();
         for (int i = 1; i <= 5; i++) {
             Member member = Member.builder()
                     .studentId("testStudentId" + i)
@@ -156,7 +162,9 @@ class TimetableServiceTest {
     void emptySecurotyContext() {
         // 테스트 후 SecurityContext 초기화
         SecurityContextHolder.clearContext();
+        em.clear();
     }
+
 
     // 나 회원가입
     public Long join() {
@@ -208,8 +216,9 @@ class TimetableServiceTest {
     String nowYear = "2025";
     String nowSemester = "1";
 
+
     @Test
-    @DisplayName("claer 왜 해야하는지")
+//    @DisplayName("claer 왜 해야하는지")
     public void 시간표저장() {
         // given
         Long myId = join();
@@ -232,7 +241,7 @@ class TimetableServiceTest {
     }
 
     @Test
-    @DisplayName("clear 왜 해야하는지")
+//    @DisplayName("clear 왜 해야하는지")
     public void 메인시간표조회() {
         // given
         Long myId = join();
@@ -254,7 +263,7 @@ class TimetableServiceTest {
     }
 
     @Test
-    @DisplayName("clear 왜 해야하는지")
+//    @DisplayName("clear 왜 해야하는지")
     public void 시간표수정() {
         // given
         Long myId = join();
@@ -295,7 +304,7 @@ class TimetableServiceTest {
     }
 
     @Test
-    @DisplayName("clear 왜 해야하는지")
+//    @DisplayName("clear 왜 해야하는지")
     public void 메인시간표변경() {
         // given
         Long myId = join();
@@ -352,4 +361,40 @@ class TimetableServiceTest {
             Assertions.assertThat(dto.getStudentIds()).containsExactly(friend.getStudentId());
         }
     }
+
+    @Test
+    public void 겹치는시간조회() {
+        // given
+        Long friendId = 1L;
+        saveUserDetails(friendId);
+        List<Long> friendSaveLectureIds = List.of(11L, 12L, 13L, 14L, 15L);
+        List<Long> mySaveLectureIds = List.of(13L, 14L, 15L, 16L, 17L);
+        Long friendTimetableId = timetableService.save(new CreateTimetableDto(nowYear, nowSemester, "테스트1", true, friendSaveLectureIds));
+        SecurityContextHolder.clearContext();
+        Long myId = join();
+        saveUserDetails(myId);
+        Long myTimetableId = timetableService.save(new CreateTimetableDto(nowYear, nowSemester, "테스트2", true, mySaveLectureIds));
+        em.flush();
+        em.clear();
+
+        // when
+        List<Long> friendIds = new ArrayList<>();
+        friendIds.add(friendId);
+        CompareMemberDto compareMemberDto = new CompareMemberDto(nowYear, nowSemester, friendIds);
+        List<InternalLectureDto> allLectures = timetableService.compareFreeTime(compareMemberDto);
+        em.flush();
+        em.clear();
+
+        // then
+        List<Long> allSaveLectureIds = new ArrayList<>();
+        allSaveLectureIds.addAll(mySaveLectureIds);
+        allSaveLectureIds.addAll(friendSaveLectureIds);
+
+        Assertions.assertThat(allLectures.size()).isEqualTo(allSaveLectureIds.size());
+        for(InternalLectureDto lecture : allLectures) {
+            Assertions.assertThat(allSaveLectureIds).contains(lecture.getId());
+        }
+    }
+
+
 }

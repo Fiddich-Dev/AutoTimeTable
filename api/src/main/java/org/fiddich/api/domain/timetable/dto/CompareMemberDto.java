@@ -8,8 +8,8 @@ import java.util.List;
 @Data
 @AllArgsConstructor
 public class CompareMemberDto {
-    String year;
-    String semester;
-    List<Long> memberIds;
+    private String year;
+    private String semester;
+    private List<Long> memberIds;
 
 }
