@@ -96,6 +96,54 @@ public class LectureServiceTest {
             em.persist(member);
             ids.add(member.getId());
         }
+
+        // 카테고리 생성
+        Category category = new Category("2025", "1", "테스트");
+        em.persist(category);
+
+        // 강의 20개 생성 (시간 랜덤, 일부 겹침 허용)
+        int[][] timeTable = {
+                {1, 108, 120},  // 월 09:00~10:00
+                {1, 114, 126},  // 월 09:30~10:30 (겹침)
+                {2, 132, 144},  // 화 11:00~12:00
+                {2, 138, 150},  // 화 11:30~12:30 (겹침)
+                {3, 156, 168},  // 수 13:00~14:00
+                {3, 162, 180},  // 수 13:30~15:00 (겹침)
+                {4, 180, 192},  // 목 15:00~16:00
+                {4, 186, 198},  // 목 15:30~16:30 (겹침)
+                {5, 204, 216},  // 금 17:00~18:00
+                {5, 210, 228},  // 금 17:30~19:00
+                {1, 132, 150},  // 월 11:00~12:30
+                {2, 96, 108},   // 화 08:00~09:00
+                {3, 144, 156},  // 수 12:00~13:00
+                {4, 198, 210},  // 목 16:30~17:30
+                {5, 228, 240},  // 금 19:00~20:00
+                {6, 120, 132},  // 토 10:00~11:00
+                {6, 132, 144},  // 토 11:00~12:00
+                {6, 144, 162},  // 토 12:00~13:30
+                {0, 108, 120},  // 일 09:00~10:00
+                {0, 120, 132}   // 일 10:00~11:00
+        };
+
+        for (int i = 0; i < 20; i++) {
+            Lecture lecture = Lecture.builder()
+                    .code("LEC" + (i + 1))
+                    .codeSection("0" + ((i % 3) + 1)) // 01 ~ 03
+                    .name("강의" + (i + 1))
+                    .professor("교수" + (i + 1))
+                    .type("전공선택")
+                    .credit("3")
+                    .target("3학년")
+                    .notice("공지사항" + (i + 1))
+                    .category(category)
+                    .build();
+
+            int[] time = timeTable[i];
+            LectureTime lectureTime = new LectureTime(time[0], time[1], time[2]);
+
+            lecture.addLectureTime(lectureTime);
+            em.persist(lecture);
+        }
     }
 
 
@@ -170,16 +218,20 @@ public class LectureServiceTest {
 
         em.persist(lecture);
 
-        // when
-        List<InternalLectureDto> searchedLectures1 = lectureService.searchLecturesByKeyword("교수");
-        List<InternalLectureDto> searchedLectures2 = lectureService.searchLecturesByKeyword("강의");
-        List<InternalLectureDto> searchedLectures3 = lectureService.searchLecturesByKeyword("");
         List<Lecture> allLectures = em.createQuery("select l from Lecture l", Lecture.class)
                 .getResultList();
 
+        System.out.println(allLectures.size());
+
+        // when
+        List<InternalLectureDto> searchedLectures1 = lectureService.searchLecturesByKeyword("교수", 0, 10);
+        List<InternalLectureDto> searchedLectures2 = lectureService.searchLecturesByKeyword("강의", 1, 10);
+        List<InternalLectureDto> searchedLectures3 = lectureService.searchLecturesByKeyword("", 0, 10);
+
+
         // then
-        Assertions.assertThat(searchedLectures1.size()).isEqualTo(20);
-        Assertions.assertThat(searchedLectures2.size()).isEqualTo(20);
+        Assertions.assertThat(searchedLectures1.size()).isEqualTo(10);
+        Assertions.assertThat(searchedLectures2.size()).isEqualTo(10);
         Assertions.assertThat(searchedLectures3.size()).isEqualTo(0);
         Assertions.assertThat(allLectures.size()).isEqualTo(21);
     }
@@ -219,6 +271,43 @@ public class LectureServiceTest {
         }
 
         Assertions.assertThat(allCategories.size()).isEqualTo(2);
+    }
+
+    @Test
+    public void 학과검색() {
+        Category category1 = new Category();
+        category1.setYear(nowYear);
+        category1.setSemester(nowSemester);
+        category1.setName("학과1");
+        Category category1_1 = new Category();
+        category1_1.setYear(nowYear);
+        category1_1.setSemester(nowSemester);
+        category1_1.setName("학과1-1");
+        Category category2_1 = new Category();
+        category2_1.setYear(nowYear);
+        category2_1.setSemester(nowSemester);
+        category2_1.setName("학과2-1");
+        category1_1.setParent(category1);
+        category2_1.setParent(category1);
+
+        em.persist(category1);
+        em.persist(category1_1);
+        em.persist(category2_1);
+
+        Category category3 = new Category();
+        category3.setYear("otherYear");
+        category3.setSemester("otherSemester");
+        category3.setName("다른학기학과");
+        category3.setParent(category1);
+        em.persist(category3);
+
+        List<InquiryDepartmentDto> findCategories = lectureService.searchCategories("학과", nowYear, nowSemester, 0, 1);
+
+        for(InquiryDepartmentDto departmentDto : findCategories) {
+            System.out.println(departmentDto.getName());
+        }
+
+        Assertions.assertThat(findCategories.size()).isEqualTo(1);
     }
 
 }

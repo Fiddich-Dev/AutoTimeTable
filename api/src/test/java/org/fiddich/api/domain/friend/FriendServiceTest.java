@@ -271,7 +271,10 @@ class FriendServiceTest {
         // when
         SecurityContextHolder.clearContext();
         saveUserDetails(myId);
-        List<SearchMemberDto> searchMemberDtos = friendService.searchMemberByStudentId("test");
+        List<SearchMemberDto> searchMemberDtos = friendService.searchMemberByStudentId("test", 0, 3);
+
+        Assertions.assertThat(searchMemberDtos.size()).isEqualTo(3);
+        searchMemberDtos = friendService.searchMemberByStudentId("test", 0, 10);
 
         // then
         Assertions.assertThat(searchMemberDtos.size()).isEqualTo(ids.size());

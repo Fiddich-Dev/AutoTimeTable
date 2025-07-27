@@ -74,7 +74,7 @@ public class FriendService {
         return me.getPendingFriends().stream().map(InquiryMemberDto::new).toList();
     }
 
-    public List<SearchMemberDto> searchMemberByStudentId(String keyword) {
+    public List<SearchMemberDto> searchMemberByStudentId(String keyword, int page, int size) {
         if(keyword == null || keyword.isEmpty()) {
             return Collections.emptyList();
         }
@@ -84,15 +84,18 @@ public class FriendService {
 
         List<Member> myFriends = me.getFriends();
 
+        List<Member> allMembers = memberRepository.findByStudentIdContaining(keyword, page, size);
+        allMembers.remove(me);
+
         // 내가 요청 보냈거나, 받은 친구를 pending으로 표시
         List<Member> pendingFriends = new ArrayList<>();
         pendingFriends.addAll(friendshipRepository.findPendingRequests(me)); // 내가 받은 요청
         pendingFriends.addAll(friendshipRepository.findPendingRequest(me.getId())); // 내가 보낸 요청
 
-        List<Member> members = memberRepository.findByStudentIdContaining(keyword);
-        members.remove(me);
+//        List<Member> members = memberRepository.findByStudentIdContaining(keyword, page, size);
+//        members.remove(me);
 
-        return members.stream()
+        return allMembers.stream()
                 .map(member -> {
                     SearchFriendStatus status;
                     if (myFriends.contains(member)) {

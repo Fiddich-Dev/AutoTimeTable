@@ -38,9 +38,11 @@ public class MemberRepository {
         return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
     }
 
-    public List<Member> findByStudentIdContaining(String keyword) {
+    public List<Member> findByStudentIdContaining(String keyword, int page, int size) {
         return em.createQuery("select m from Member m where m.studentId like :keyword", Member.class)
                 .setParameter("keyword", "%" + keyword + "%")
+                .setFirstResult(page * size)
+                .setMaxResults(size)
                 .getResultList();
     }
 

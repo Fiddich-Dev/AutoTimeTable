@@ -20,14 +20,20 @@ public class LectureController {
     private final LectureService lectureService;
 
     @GetMapping("/lectures/search")
-    public ApiResponse<List<InternalLectureDto>> searchLectures(@RequestParam String keyword) {
+    public ApiResponse<List<InternalLectureDto>> searchLectures(@RequestParam String keyword, @RequestParam int page, @RequestParam int size) {
         log.info("{}로 강의 검색", keyword);
-        return ApiResponse.onSuccess(lectureService.searchLecturesByKeyword(keyword));
+        return ApiResponse.onSuccess(lectureService.searchLecturesByKeyword(keyword, page, size));
     }
 
     @GetMapping("/categories")
     public ApiResponse<List<InquiryDepartmentDto>> getAllCategories(@RequestParam String year, @RequestParam String semester) {
         log.info("모든 학과 조회 year = {}, semester = {}", year, semester);
         return ApiResponse.onSuccess(lectureService.getAllCategories(year, semester));
+    }
+
+    @GetMapping("/categories/search")
+    public ApiResponse<List<InquiryDepartmentDto>> searchCategories(@RequestParam String keyword, @RequestParam String year, @RequestParam String semester, @RequestParam int page, @RequestParam int size) {
+        log.info("모든 학과 조회 year = {}, semester = {}", year, semester);
+        return ApiResponse.onSuccess(lectureService.searchCategories(keyword, year, semester, page, size));
     }
 }

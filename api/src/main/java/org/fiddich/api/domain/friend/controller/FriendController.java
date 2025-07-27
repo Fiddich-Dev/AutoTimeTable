@@ -59,9 +59,9 @@ public class FriendController {
     }
 
     @GetMapping("/friends/search")
-    public ApiResponse<List<SearchMemberDto>> searchMemberByStudentId(@RequestParam String keyword) {
+    public ApiResponse<List<SearchMemberDto>> searchMemberByStudentId(@RequestParam String keyword, @RequestParam int page, @RequestParam int size) {
         log.info("친구 검색");
-        return ApiResponse.onSuccess(friendService.searchMemberByStudentId(keyword));
+        return ApiResponse.onSuccess(friendService.searchMemberByStudentId(keyword, page, size));
     }
 
 }

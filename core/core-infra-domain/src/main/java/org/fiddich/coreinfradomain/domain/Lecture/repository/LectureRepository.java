@@ -49,7 +49,7 @@ public class LectureRepository {
         return lecture.getId();
     }
 
-    public List<Lecture> searchByAutoField(String keyword) {
+    public List<Lecture> searchByAutoField(String keyword, int page, int size) {
         return em.createQuery("""
     select l from Lecture l
     where (l.name like :kw
@@ -58,6 +58,8 @@ public class LectureRepository {
       and l.member is null
 """, Lecture.class)
                 .setParameter("kw", "%" + keyword + "%")
+                .setFirstResult(page * size)
+                .setMaxResults(size)
                 .getResultList();
     }
 
@@ -65,6 +67,16 @@ public class LectureRepository {
         return em.createQuery("select c from Category c where c.year = :year and c.semester = :semester and c.parent is not null", Category.class)
                 .setParameter("year", year)
                 .setParameter("semester", semester)
+                .getResultList();
+    }
+
+    public List<Category> searchCategoryByYearAndSemester(String keyword, String year, String semester, int page, int size) {
+        return em.createQuery("select c from Category c where c.year = :year and c.semester = :semester and c.parent is not null and c.name like :keyword", Category.class)
+                .setParameter("year", year)
+                .setParameter("semester", semester)
+                .setParameter("keyword", "%" + keyword + "%")
+                .setFirstResult(page * size)
+                .setMaxResults(size)
                 .getResultList();
     }
 
