@@ -81,7 +81,10 @@ public class SecurityConfig {
                         "/mail/verify",
                         "/lectures/search",
                         "/categories",
-                        "/categories/search"
+                        "/categories/search",
+                        "/everytime/categories",
+                        "/everytime/lectures/category",
+                        "/everytime/lectures/search"
                 ).permitAll() // 인증 안받아도 되는 요청
                 .requestMatchers("/admin").hasAuthority("ADMIN") // 권한과 인증이 필요한 요청
                 .anyRequest().authenticated()); // 인증이 필요한 요청

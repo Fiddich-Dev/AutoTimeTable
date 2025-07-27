@@ -1,15 +1,19 @@
 package org.fiddich.api.domain.timetable.controller;
 
 
+import lombok.Getter;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.fiddich.api.domain.timetable.Category;
 import org.fiddich.api.domain.timetable.EverytimeService;
+import org.fiddich.api.domain.timetable.Subject;
 import org.fiddich.api.domain.timetable.dto.*;
 import org.fiddich.api.domain.timetable.TimetableService;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
 import org.springframework.web.bind.annotation.*;
 
+import java.io.IOException;
 import java.util.List;
 
 @Slf4j
@@ -104,6 +108,27 @@ public class TimetableController {
     public ApiResponse<List<InternalLectureDto>> compareFreeTime(@RequestBody CompareMemberDto compareMemberDto) {
         log.info("겹치는 시간 비교");
         return ApiResponse.onSuccess(timetableService.compareFreeTime(compareMemberDto));
+    }
+
+    @GetMapping("/everytime/categories")
+    public ApiResponse<List<Category>> everytimeCategories(@RequestParam String year, @RequestParam String semester) {
+        log.info("에브리타임에서 학과 다 가져오기");
+        return ApiResponse.onSuccess(everytimeService.everytimeCategories(year, semester));
+    }
+
+    // 학과별로 강의 가져오기
+    @GetMapping("/everytime/lectures/category")
+    public ApiResponse<List<InternalLectureDto>> everytimeLecturesByCategory(@RequestParam String categoryId, @RequestParam String year, @RequestParam String semester) {
+        log.info("에브리타임에서 학과의 강의 다 가져오기");
+        return ApiResponse.onSuccess(everytimeService.getLecturesByCategoryId(categoryId, year, semester));
+    }
+
+    // 검색해서 강의 가져오기
+    @GetMapping("/everytime/lectures/search")
+    public ApiResponse<List<InternalLectureDto>> searchEverytimeLectures(@RequestParam String type, @RequestParam String keyword, @RequestParam String year, @RequestParam String semester, @RequestParam int page, @RequestParam int size) {
+        log.info("에브리타임에서 강의 검색");
+        String keywordJson = String.format("{\"type\":\"%s\",\"keyword\":\"%s\"}", type, keyword);
+        return ApiResponse.onSuccess(everytimeService.searchEverytimeLectures(keywordJson, year, semester, page, size));
     }
 
 }

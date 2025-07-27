@@ -3,6 +3,8 @@ package org.fiddich.api.domain.timetable.dto;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
+import org.fiddich.api.domain.timetable.Subject;
+import org.fiddich.api.domain.timetable.TimePlace;
 import org.fiddich.api.domain.timetable.helper.TimeParser;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 import org.fiddich.coreinfradomain.domain.Lecture.LectureTime;
@@ -22,6 +24,32 @@ public class InternalLectureDto {
     private String credit;
     private String categoryName;
     private String notice;
+
+    public InternalLectureDto(Subject subject) {
+        this.id = Long.parseLong(subject.getId());
+        this.code = subject.getCode().split("-")[0];
+        this.codeSection = subject.getCode();
+        this.name = subject.getName();
+        this.professor = subject.getProfessor();
+        this.type = subject.getType();
+        this.credit = subject.getCredit();
+        this.categoryName = null;
+        this.notice = subject.getNotice();
+
+        StringBuilder sb = new StringBuilder();
+
+        for(TimePlace timePlace : subject.getTimeplaceList()) {
+            String day = String.valueOf(timePlace.getDay());
+            String start = String.valueOf(timePlace.getStart());
+            String end = String.valueOf(timePlace.getEnd());
+            String time = TimeParser.timeParse(day, start, end);
+            sb.append(time).append(",");
+        }
+        if (!sb.isEmpty()) {
+            sb.setLength(sb.length() - 1); // 마지막 쉼표 제거
+        }
+        this.time = sb.toString();
+    }
 
     public InternalLectureDto(Lecture lecture) {
         this.id = lecture.getId();
