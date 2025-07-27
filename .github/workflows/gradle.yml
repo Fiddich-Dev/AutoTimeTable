@@ -29,7 +29,13 @@ jobs:
       
     - name: Build Docker image
       run: |
-        docker build -t ${{ secrets.IMAGE_NAME }} .  
+        # docker build -t ${{ secrets.IMAGE_NAME }} . 
+
+        # aarch64로 빌드
+        docker buildx build --platform linux/arm64 \
+        -t ${{ secrets.IMAGE_NAME }} \
+        --output type=docker \
+        .
         
     - name: Save Docker image to archive
       run: |
