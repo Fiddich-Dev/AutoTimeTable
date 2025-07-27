@@ -20,23 +20,6 @@ jobs:
     steps:
     - name: Checkout
       uses: actions/checkout@v4
-
-    # - name: Create .env file
-    #   run: |
-    #     cat <<EOF > .env
-    #     DB_URL=${{ secrets.DB_URL }}
-    #     DB_USERNAME=${{ secrets.DB_USERNAME }}
-    #     DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-    #     REDIS_HOST=${{ secrets.REDIS_HOST }}
-    #     REDIS_PORT=${{ secrets.REDIS_PORT }}
-    #     SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
-    #     SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-    #     SMTP_PORT=${{ secrets.SMTP_PORT }}
-    #     JWT_SECRET=${{ secrets.JWT_SECRET }}
-    #     CONTAINER_NAME=${{ secrets.CONTAINER_NAME }}
-    #     IMAGE_NAME=${{ secrets.IMAGE_NAME }}
-    #     EOF
-    #     cat .env
         
     - name: Build
       run: ./gradlew clean build
@@ -52,49 +35,49 @@ jobs:
       run: |
         docker save ${{ secrets.IMAGE_NAME }} | gzip > ${GITHUB_SHA}.tar.gz
       
-    - name: Copy image to EC2
+    - name: Copy Docker image to Raspberry Pi
       uses: appleboy/scp-action@v0.1.7
       with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_SSH_KEY }}
+        host: ${{ secrets.RAS_HOST }}
+        username: ${{ secrets.RAS_USER }}
+        key: ${{ secrets.RAS_PASSWORD }}
         source: "${{ github.sha }}.tar.gz"
-        target: "/home/${{ secrets.EC2_USER }}/"
+        target: "/home/${{ secrets.RAS_USER }}/"
 
     - name: stop container
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_SSH_KEY }}
+        host: ${{ secrets.RAS_HOST }}
+        username: ${{ secrets.RAS_USER }}
+        key: ${{ secrets.RAS_PASSWORD }}
         script: |
           docker stop ${{ secrets.CONTAINER_NAME }} || true
 
     - name: remove container
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_SSH_KEY }}
+        host: ${{ secrets.RAS_HOST }}
+        username: ${{ secrets.RAS_USER }}
+        key: ${{ secrets.RAS_PASSWORD }}
         script: |
           docker rm ${{ secrets.CONTAINER_NAME }} || true
 
     - name: remove image
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_SSH_KEY }}
+        host: ${{ secrets.RAS_HOST }}
+        username: ${{ secrets.RAS_USER }}
+        key: ${{ secrets.RAS_PASSWORD }}
         script: |
           docker rmi ${{ secrets.IMAGE_NAME }} || true
     
     
-    - name: SSH into EC2 and run container
+    - name: SSH into Raspberry Pi and run container
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.EC2_HOST }}
-        username: ${{ secrets.EC2_USER }}
-        key: ${{ secrets.EC2_SSH_KEY }}
+        host: ${{ secrets.RAS_HOST }}
+        username: ${{ secrets.RAS_USER }}
+        key: ${{ secrets.RAS_PASSWORD }}
         script: |
           
           # 이미지 로드
@@ -103,24 +86,25 @@ jobs:
 
           
           # .env 파일 생성 (반드시 추가)
-          cat <<EOF > .env
-          DB_URL=${{ secrets.DB_URL }}
-          DB_USERNAME=${{ secrets.DB_USERNAME }}
-          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          REDIS_HOST=${{ secrets.REDIS_HOST }}
-          REDIS_PORT=${{ secrets.REDIS_PORT }}
-          SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
-          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-          SMTP_PORT=${{ secrets.SMTP_PORT }}
-          JWT_SECRET=${{ secrets.JWT_SECRET }}
-          CONTAINER_NAME=${{ secrets.CONTAINER_NAME }}
-          IMAGE_NAME=${{ secrets.IMAGE_NAME }}
-          EOF
+          # cat <<EOF > .env
+          # DB_URL=${{ secrets.DB_URL }}
+          # DB_USERNAME=${{ secrets.DB_USERNAME }}
+          # DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          # REDIS_HOST=${{ secrets.REDIS_HOST }}
+          # REDIS_PORT=${{ secrets.REDIS_PORT }}
+          # SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
+          # SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+          # SMTP_PORT=${{ secrets.SMTP_PORT }}
+          # JWT_SECRET=${{ secrets.JWT_SECRET }}
+          # CONTAINER_NAME=${{ secrets.CONTAINER_NAME }}
+          # IMAGE_NAME=${{ secrets.IMAGE_NAME }}
+          # EOF
           
           # 이미지 실행
           docker run --env-file ./.env -d -p 8080:8080 --name ${{ secrets.CONTAINER_NAME }} ${{ secrets.IMAGE_NAME }}
+          docker run  --env-file ./.env   -e "SPRING_PROFILES_ACTIVE=prod"   -d -p 8080:8080   --name ${{ secrets.CONTAINER_NAME }}   ${{ secrets.IMAGE_NAME }}
           #정리 
           # sudo docker rmi $(sudo docker images -f "dangling=true" -q) --force
           rm -f ${{ github.sha }}.tar.gz
           rm -f ${{ github.sha }}.tar
-          rm -f .env
+          # rm -f .env
