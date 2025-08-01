@@ -72,22 +72,19 @@ public class InternalLectureDto {
         this.credit = customLecture.getCredit();
         this.notice = customLecture.getNotice();
 
-        for(LectureTime lectureTime : customLecture.getLectureTimes()) {
-            System.out.println(lectureTime);
-        }
-
-        // 중복 제거 로직
-        Set<String> uniqueTimes = new LinkedHashSet<>(); // 순서 유지
+        StringBuilder sb = new StringBuilder();
 
         for(LectureTime lectureTime : customLecture.getLectureTimes()) {
             String day = String.valueOf(lectureTime.getDay());
             String start = String.valueOf(lectureTime.getStart());
             String end = String.valueOf(lectureTime.getEnd());
             String time = TimeParser.timeParse(day, start, end);
-            uniqueTimes.add(time); // Set이 자동으로 중복 제거
+            sb.append(time).append(",");
         }
-
-        this.time = String.join(",", uniqueTimes);
+        if (!sb.isEmpty()) {
+            sb.setLength(sb.length() - 1); // 마지막 쉼표 제거
+        }
+        this.time = sb.toString();
     }
 
 

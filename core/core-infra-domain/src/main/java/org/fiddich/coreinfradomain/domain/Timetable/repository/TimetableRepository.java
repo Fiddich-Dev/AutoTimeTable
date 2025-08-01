@@ -5,6 +5,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.persistence.NoResultException;
 import lombok.RequiredArgsConstructor;
 import org.fiddich.coreinfradomain.domain.Lecture.CustomLecture;
+import org.fiddich.coreinfradomain.domain.Lecture.LectureTime;
 import org.fiddich.coreinfradomain.domain.Timetable.Timetable;
 import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
@@ -72,12 +73,12 @@ public class TimetableRepository {
                 .getResultList();
 
         if (!timetables.isEmpty()) {
-            // 2. 커스텀 강의 및 시간표 별도 조회 (DISTINCT 적용)
+            // 2. 커스텀 강의 페치 조인
             em.createQuery("""
-            SELECT DISTINCT cl FROM CustomLecture cl
-            LEFT JOIN FETCH cl.lectureTimes
-            WHERE cl.timetable IN :timetables
-            """, CustomLecture.class)
+            SELECT DISTINCT t FROM Timetable t
+            LEFT JOIN FETCH t.customLectures
+            WHERE t IN :timetables
+            """, Timetable.class)
                     .setParameter("timetables", timetables)
                     .getResultList();
 
@@ -90,6 +91,7 @@ public class TimetableRepository {
                     .setParameter("timetables", timetables)
                     .getResultList();
         }
+
         return timetables.stream().findFirst();
     }
 

@@ -419,6 +419,8 @@ class TimetableServiceTest {
         Long myId = join();
         saveUserDetails(myId);
         Long myTimetableId = timetableService.save(new CreateTimetableDto(nowYear, nowSemester, "테스트2", true, mySaveLectures));
+        em.flush();
+        em.clear();
 
         // when
         List<Long> friendIds = new ArrayList<>();
