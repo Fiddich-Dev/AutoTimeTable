@@ -12,7 +12,9 @@ spring:
       mail:
         smtp:
           auth: true
-          timeout: 5000
+          connectiontimeout: 10000 # 연결 타임아웃 (10초)
+          timeout: 10000         # 읽기 타임아웃 (10초)
+          writetimeout: 10000    # 쓰기 타임아웃 (10초)
           starttls:
             enable: true
 
