@@ -33,7 +33,7 @@ jobs:
       uses: actions/checkout@v4
         
     - name: Build
-      run: ./gradlew clean build
+      run: ./gradlew clean build --no-build-cache
 
     - name: Set up Docker
       uses: docker/setup-buildx-action@v3
