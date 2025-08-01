@@ -118,7 +118,7 @@ jobs:
           # EOF
           
           # 이미지 실행
-          docker run --env-file ./.env -d -p 8080:8080 --name ${{ secrets.CONTAINER_NAME }} ${{ secrets.IMAGE_NAME }}
+          # docker run --env-file ./.env -d -p 8080:8080 --name ${{ secrets.CONTAINER_NAME }} ${{ secrets.IMAGE_NAME }}
           docker run  --env-file ./.env   -e "SPRING_PROFILES_ACTIVE=prod"   -d -p 8080:8080   --name ${{ secrets.CONTAINER_NAME }}   ${{ secrets.IMAGE_NAME }}
           #정리 
           # sudo docker rmi $(sudo docker images -f "dangling=true" -q) --force
