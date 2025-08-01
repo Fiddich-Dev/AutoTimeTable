@@ -135,31 +135,30 @@ class AuthServiceTest {
         SecurityContextHolder.setContext(context);
     }
 
-    // ************이건 로컬에서만 테스트*************
-//    @Test
-//    void 리이슈() throws Exception {
-//
-//        Long id = join();
-//        System.out.println(id);
-//        JWTDto jwtDto = login();
-//        saveUserDetails(id);
-//
-//
-//        Member member = memberRepository.findById(id).get();
-//
-//        Thread.sleep(1000);
-//
-//        JWTDto newJwtDto = authService.reissueProcess(jwtDto.getRefresh());
-//
-//        String key = member.getStudentId() + ":refreshToken";
-//        boolean isExistOldRefresh = redisUtil.findAllValues(key, 0, -1).contains(jwtDto.getRefresh());
-//        boolean isExistNewRefresh = redisUtil.findAllValues(key, 0, -1).contains(newJwtDto.getRefresh());
-//
-//        Assertions.assertThat(isExistOldRefresh).isFalse();
-//        Assertions.assertThat(isExistNewRefresh).isTrue();
-//
-//        redisUtil.deleteKey(key);
-//    }
+    @Test
+    void 리이슈() throws Exception {
+
+        Long id = join();
+        System.out.println(id);
+        JWTDto jwtDto = login();
+        saveUserDetails(id);
+
+
+        Member member = memberRepository.findById(id).get();
+
+        Thread.sleep(1000);
+
+        JWTDto newJwtDto = authService.reissueProcess(jwtDto.getRefresh());
+
+        String key = member.getStudentId() + ":refreshToken";
+        boolean isExistOldRefresh = redisUtil.findAllValues(key, 0, -1).contains(jwtDto.getRefresh());
+        boolean isExistNewRefresh = redisUtil.findAllValues(key, 0, -1).contains(newJwtDto.getRefresh());
+
+        Assertions.assertThat(isExistOldRefresh).isFalse();
+        Assertions.assertThat(isExistNewRefresh).isTrue();
+
+        redisUtil.deleteKey(key);
+    }
 
     @Test
     void 인증번호보내고확인() {
