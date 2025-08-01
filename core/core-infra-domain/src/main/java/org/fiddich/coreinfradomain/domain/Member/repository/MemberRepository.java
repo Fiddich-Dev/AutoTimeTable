@@ -1,7 +1,6 @@
 package org.fiddich.coreinfradomain.domain.Member.repository;
 
 import lombok.extern.slf4j.Slf4j;
-import org.fiddich.coreinfradomain.domain.Lecture.School;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;

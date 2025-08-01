@@ -1,12 +1,13 @@
-package org.fiddich.api.domain.timetable.dto;
+package org.fiddich.api.domain.everytime.dto;
 
 import com.fasterxml.jackson.annotation.JsonProperty;
 import lombok.Data;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Data
-public class CreateTimetableWithExternalLecturesDto {
+public class TimetableByUrl {
 
     private String year;
     private String semester;
@@ -15,9 +16,9 @@ public class CreateTimetableWithExternalLecturesDto {
     @JsonProperty("isRepresent")
     private boolean isRepresent;
 
-    private List<ExternalLectureDto> lectures;
+    private List<Subject> subjects = new ArrayList<>();
 
     public boolean isRepresent() {
         return isRepresent;
     }
-} // 외부 DB에서 시간표를 조회할떄 사용
+}

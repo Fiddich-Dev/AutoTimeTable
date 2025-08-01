@@ -7,37 +7,6 @@ import java.util.regex.Pattern;
 
 public class TimeParser {
 
-//    public static String timeParse(String input) {
-//        String[] lines = input.split("<br>");
-//        StringBuilder result = new StringBuilder();
-//
-//        Pattern pattern = Pattern.compile("([월화수목금토일])([0-9]{1,2}):([0-9]{2})-([0-9]{1,2}):([0-9]{2})");
-//
-//        for (int i = 0; i < lines.length; i++) {
-//            Matcher matcher = pattern.matcher(lines[i]);
-//            if (matcher.find()) {
-//                String day = matcher.group(1);
-//                int startHour = Integer.parseInt(matcher.group(2));
-//                int startMin = Integer.parseInt(matcher.group(3));
-//                int endHour = Integer.parseInt(matcher.group(4));
-//                int endMin = Integer.parseInt(matcher.group(5));
-//
-//                int startTime = startHour * 100 + startMin;
-//                int endTime = endHour * 100 + endMin;
-//
-//                result.append(day)
-//                        .append(startTime)
-//                        .append("-")
-//                        .append(endTime);
-//
-//                if (i < lines.length - 1) {
-//                    result.append(",");
-//                }
-//            }
-//        }
-//        return result.toString();
-//    }
-
     public static String timeParse(String day, String start, String end) {
         StringBuilder time = new StringBuilder();
         time.append(numToDay(day)).append(numToTime(start)).append("-").append(numToTime(end));
@@ -50,10 +19,6 @@ public class TimeParser {
         String[] times = dayAndTime.substring(1).split("-");
         String start = times[0];
         String end = times[1];
-        System.out.println(day + " : " + start + " : " + end);
-        System.out.println(dayToNum(day));
-        System.out.println(timeToNum(start));
-        System.out.println(timeToNum(end));
         return new LectureTime(dayToNum(day), timeToNum(start), timeToNum(end));
     }
 

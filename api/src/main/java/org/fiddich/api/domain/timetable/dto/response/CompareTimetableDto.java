@@ -1,7 +1,7 @@
-package org.fiddich.api.domain.timetable.dto;
+package org.fiddich.api.domain.timetable.dto.response;
 
 import lombok.Data;
-import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
+import org.fiddich.api.domain.timetable.dto.InternalLectureDto;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -12,7 +12,4 @@ public class CompareTimetableDto {
     List<String> usernames = new ArrayList<>();
     List<String> studentIds = new ArrayList<>();
 
-    public CompareTimetableDto(Lecture lecture) {
-        this.internalLectureDto = new InternalLectureDto(lecture);
-    }
 }

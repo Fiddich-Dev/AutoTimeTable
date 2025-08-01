@@ -62,7 +62,7 @@ public class MemberService {
         log.info("탈퇴 요청 PK: {}", id);
         log.info("studentId = {}", studentId);
 
-        lectureRepository.deleteCustomLecturesByMember(id);
+//        lectureRepository.deleteCustomLecturesByMember(id);
         timetableRepository.deleteAllTimetableByMemberId(id);
         memberRepository.deleteById(id);
         // redis에서 studentId + ":refreshToken" 키 삭제

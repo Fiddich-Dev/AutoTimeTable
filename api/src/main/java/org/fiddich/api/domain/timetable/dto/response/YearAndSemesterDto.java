@@ -1,4 +1,4 @@
-package org.fiddich.api.domain.timetable.dto;
+package org.fiddich.api.domain.timetable.dto.response;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;

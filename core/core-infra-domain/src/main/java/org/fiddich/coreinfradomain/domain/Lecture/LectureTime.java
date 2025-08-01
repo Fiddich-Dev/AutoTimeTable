@@ -4,11 +4,15 @@ import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import lombok.ToString;
+
+import java.util.Objects;
 
 @Entity
 @Getter
 @Setter
 @NoArgsConstructor
+@ToString
 public class LectureTime {
 
     @Id
@@ -16,9 +20,9 @@ public class LectureTime {
     @Column(name = "lecture_time_id")
     private Long id;
 
-    @ManyToOne
-    @JoinColumn(name = "lecture_id")
-    private Lecture lecture;
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "custom_lecture_id")
+    private CustomLecture customLecture;
 
     @Column(name = "day_of_week")
     private Integer day;
@@ -32,4 +36,5 @@ public class LectureTime {
         this.start = start;
         this.end = end;
     }
+
 }

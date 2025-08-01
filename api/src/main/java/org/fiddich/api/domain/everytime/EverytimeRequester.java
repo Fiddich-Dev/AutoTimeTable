@@ -1,11 +1,10 @@
-package org.fiddich.api.domain.timetable.helper;
+package org.fiddich.api.domain.everytime;
 
 import lombok.extern.slf4j.Slf4j;
-import org.fiddich.api.domain.timetable.Category;
-import org.fiddich.api.domain.timetable.Subject;
-import org.fiddich.api.domain.timetable.TimePlace;
-import org.fiddich.api.domain.timetable.dto.CreateTimetableWithExternalLecturesDto;
-import org.fiddich.api.domain.timetable.dto.ExternalLectureDto;
+import org.fiddich.api.domain.everytime.dto.Category;
+import org.fiddich.api.domain.everytime.dto.Subject;
+import org.fiddich.api.domain.everytime.dto.TimePlace;
+import org.fiddich.api.domain.everytime.dto.TimetableByUrl;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
@@ -13,7 +12,10 @@ import org.jsoup.nodes.Element;
 import org.jsoup.select.Elements;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 @Slf4j
 public class EverytimeRequester {
@@ -53,7 +55,7 @@ public class EverytimeRequester {
         return categories;
     }
 
-    // 학과번호로 페이징된 강의 찾기
+    // 학과번호로 모든 강의 찾기
     public static List<Subject> findSubjectsByCategoryId(String categoryId, String year, String semester) throws IOException {
         List<Subject> allSubjects = new ArrayList<>();
 
@@ -71,6 +73,7 @@ public class EverytimeRequester {
         return allSubjects;
     }
 
+    // 학과번호로 페이징된 강의 찾기
     private static List<Subject> fetchLecturesByCategory(String categoryId,
                                         String year,
                                         String semester,
@@ -112,15 +115,10 @@ public class EverytimeRequester {
                     el.attr("name"),
                     el.attr("professor"),
                     el.attr("type"),
-                    el.attr("time"),
                     el.attr("place"),
                     el.attr("credit"),
-                    el.attr("capacity"),
-                    el.attr("popular"),
                     el.attr("target"),
                     el.attr("notice"),
-                    el.attr("lectureId"),
-                    el.attr("lectureRate"),
                     timeplaceList
             );
             subjectList.add(subject);
@@ -171,15 +169,10 @@ public class EverytimeRequester {
                     el.attr("name"),
                     el.attr("professor"),
                     el.attr("type"),
-                    el.attr("time"),
                     el.attr("place"),
                     el.attr("credit"),
-                    el.attr("capacity"),
-                    el.attr("popular"),
                     el.attr("target"),
                     el.attr("notice"),
-                    el.attr("lectureId"),
-                    el.attr("lectureRate"),
                     timeplaceList
             );
             subjectList.add(subject);
@@ -218,7 +211,7 @@ public class EverytimeRequester {
     }
 
     // 특정 identifier로 시간표 조회
-    private static List<ExternalLectureDto> findByEveryTimetableLectureById(String identifier) throws IOException {
+    private static List<Subject> findByEveryTimetableLectureById(String identifier) throws IOException {
 
         Document doc = Jsoup.connect("https://api.everytime.kr/find/timetable/table/friend")
                 .method(Connection.Method.POST)
@@ -232,52 +225,49 @@ public class EverytimeRequester {
         Element tableElement = doc.selectFirst("table");
         Elements subjects = tableElement.select("subject");
 
-        List<ExternalLectureDto> externalLectureDtos = new ArrayList<>();
+        List<Subject> subjectList = new ArrayList<>();
 
         for (Element subject : subjects) {
-            ExternalLectureDto externalLectureDto = new ExternalLectureDto();
+            Subject findSubject = new Subject();
 
             String subjectId = subject.attr("id");
             String fullCode = subject.selectFirst("internal").attr("value"); // codeSection
-            String codePrefix = fullCode.split("-")[0]; // code
 
             Elements rawTimes = subject.selectFirst("time").select("data");
-            StringBuilder time = new StringBuilder();
+
+            List<TimePlace> timePlaceList = new ArrayList<>();
+
             for(Element rawTime : rawTimes) {
                 String day = rawTime.attr("day");
                 String start = rawTime.attr("starttime");
                 String end = rawTime.attr("endtime");
-                time.append(TimeParser.timeParse(day, start, end)).append(",");
+                String place = rawTime.attr("place");
+
+                timePlaceList.add(new TimePlace(day, start, end, place));
             }
-            if (!time.isEmpty()) {
-                time.setLength(time.length() - 1); // 마지막 문자 제거 (예: ',' 제거)
-            }
-            String finalTime = time.toString(); // String으로 변환
 
             String professor = subject.selectFirst("professor").attr("value");
             String name = subject.selectFirst("name").attr("value");
             String credit = subject.selectFirst("credit").attr("value");
 
-            externalLectureDto.setSubjectId(subjectId);
-            externalLectureDto.setCode(codePrefix);
-            externalLectureDto.setCodeSection(fullCode);
-            externalLectureDto.setProfessor(professor);
-            externalLectureDto.setName(name);
-            externalLectureDto.setTime(finalTime);
-            externalLectureDto.setCredit(credit);
+            findSubject.setId(subjectId);
+            findSubject.setCode(fullCode);
+            findSubject.setName(name);
+            findSubject.setProfessor(professor);
+            findSubject.setType("");
+            findSubject.setPlace("");
+            findSubject.setCredit(credit);
+            findSubject.setTarget("");
+            findSubject.setNotice("");
+            findSubject.setTimeplaceList(timePlaceList);
 
-            if(time.isEmpty()) {
-                continue;
-            }
-
-            externalLectureDtos.add(externalLectureDto);
+            subjectList.add(findSubject);
         }
-        return externalLectureDtos;
+        return subjectList;
     }
 
     // 에타의 모든 시간표 가져오기(조회만)
-    public static List<CreateTimetableWithExternalLecturesDto> findAllEveryTimetable(String url) throws IOException {
-
+    public static List<TimetableByUrl> findAllEveryTimetable(String url) throws IOException {
         // 에타 시간표id 추출
         String[] parts = url.split("/");
         String identifier = parts[parts.length - 1].replace("@", "");
@@ -295,7 +285,7 @@ public class EverytimeRequester {
         // 에타에 저장된 모든 시간표id, 학년도 정보
         Elements primaryTables = doc.select("primaryTable");
         // 조회할 시간표
-        List<CreateTimetableWithExternalLecturesDto> createTimetableWithExternalLecturesDtos = new ArrayList<>();
+        List<TimetableByUrl> timetableByUrlList = new ArrayList<>();
 
         for (Element primaryTable : primaryTables) {
 
@@ -303,17 +293,18 @@ public class EverytimeRequester {
             String semester = primaryTable.attr("semester");
             identifier = primaryTable.attr("identifier");
 
-            List<ExternalLectureDto> externalLectureDtos = findByEveryTimetableLectureById(identifier);
+            List<Subject> subjectList = findByEveryTimetableLectureById(identifier);
 
-            CreateTimetableWithExternalLecturesDto createTimetableWithExternalLecturesDto = new CreateTimetableWithExternalLecturesDto();
-            createTimetableWithExternalLecturesDto.setYear(year);
-            createTimetableWithExternalLecturesDto.setSemester(semester);
-            createTimetableWithExternalLecturesDto.setRepresent(false); // 일단 조회만 하니까 메인시간표로 설정X
-            createTimetableWithExternalLecturesDto.setLectures(externalLectureDtos);
+            TimetableByUrl timetableByUrl = new TimetableByUrl();
+            timetableByUrl.setYear(year);
+            timetableByUrl.setSemester(semester);
+            timetableByUrl.setRepresent(false); // 일단 조회만 하니까 메인시간표로 설정X
+            timetableByUrl.setTimeTableName("everytime");
+            timetableByUrl.setSubjects(subjectList);
 
-            createTimetableWithExternalLecturesDtos.add(createTimetableWithExternalLecturesDto);
+            timetableByUrlList.add(timetableByUrl);
         }
-        return createTimetableWithExternalLecturesDtos;
+        return timetableByUrlList;
     }
 
 }

@@ -5,15 +5,20 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.assertj.core.api.Assertions;
+import org.fiddich.api.domain.everytime.EverytimeUtil;
 import org.fiddich.api.domain.member.MemberService;
 import org.fiddich.api.domain.member.dto.JoinDto;
 import org.fiddich.api.domain.timetable.dto.*;
 
-import org.fiddich.coreinfradomain.domain.Lecture.Category;
+import org.fiddich.api.domain.timetable.dto.request.CompareMemberDto;
+import org.fiddich.api.domain.timetable.dto.request.TimetableIdDto;
+import org.fiddich.api.domain.timetable.dto.response.CompareTimetableDto;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 import org.fiddich.coreinfradomain.domain.Lecture.LectureTime;
+import org.fiddich.coreinfradomain.domain.Lecture.OfficialLecture;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
+import org.fiddich.coreinfradomain.domain.Timetable.Timetable;
 import org.fiddich.coreinfradomain.domain.Timetable.repository.TimetableRepository;
 import org.fiddich.coreinfraredis.util.RedisUtil;
 import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;
@@ -49,10 +54,8 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.sql.SQLOutput;
+import java.util.*;
 import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -81,20 +84,40 @@ class TimetableServiceTest {
     @Autowired
     MemberRepository memberRepository;
     @Autowired
-    EverytimeService everytimeService;
+    EverytimeUtil everytimeUtil;
     @Autowired
     TimetableService timetableService;
-
-    List<Long> ids = new ArrayList<>();
     @Autowired
     private TimetableRepository timetableRepository;
+
+    List<Long> ids = new ArrayList<>();
+
+    List<String> officialLectureCodeSections = List.of("GEDB003-01", "GEDB003-41", "GEDB003-42");
+
+    List<InternalLectureDto> encodedCustomLectures = List.of(
+            new InternalLectureDto(1L, "", "커스텀강의1", "교수1", "", "0", "", "일900-1100,일1200-1300"),
+            new InternalLectureDto(2L, "", "커스텀강의2", "교수2", "", "0", "", "일1330-1445,일1500-1600"),
+            new InternalLectureDto(3L, "", "커스텀강의3", "교수3", "", "0", "", "일1600-1800")
+    );
+
+    List<String> officialLectureCodeSections2 = List.of("GEDB003-42", "GEDB003-43", "GEDB003-44");
+
+    List<InternalLectureDto> encodedCustomLectures2 = List.of(
+            new InternalLectureDto(1L, "", "커스텀강의3", "교수3", "", "0", "", "토900-1100,토1200-1300"),
+            new InternalLectureDto(2L, "", "커스텀강의4", "교수4", "", "0", "", "토1330-1445,토1500-1600"),
+            new InternalLectureDto(3L, "", "커스텀강의5", "교수5", "", "0", "", "토1600-1800")
+    );
+
+
 
     // 테스트 회원들
     @BeforeEach
     public void init() {
         // ID 시퀀스 초기화
-        em.createNativeQuery("ALTER TABLE lecture ALTER COLUMN lecture_id RESTART WITH 1").executeUpdate();
+//        em.createNativeQuery("ALTER TABLE lecture ALTER COLUMN lecture_id RESTART WITH 1").executeUpdate();
         em.createNativeQuery("ALTER TABLE member ALTER COLUMN member_id RESTART WITH 1").executeUpdate();
+//        em.createNativeQuery("ALTER TABLE timetable ALTER COLUMN timetable_id RESTART WITH 1").executeUpdate();
+
 
         // 멤버 생성
         ids.clear();
@@ -106,54 +129,6 @@ class TimetableServiceTest {
                     .build();
             em.persist(member);
             ids.add(member.getId());
-        }
-
-        // 카테고리 생성
-        Category category = new Category("2025", "1", "테스트");
-        em.persist(category);
-
-        // 강의 20개 생성 (시간 랜덤, 일부 겹침 허용)
-        int[][] timeTable = {
-                {1, 108, 120},  // 월 09:00~10:00
-                {1, 114, 126},  // 월 09:30~10:30 (겹침)
-                {2, 132, 144},  // 화 11:00~12:00
-                {2, 138, 150},  // 화 11:30~12:30 (겹침)
-                {3, 156, 168},  // 수 13:00~14:00
-                {3, 162, 180},  // 수 13:30~15:00 (겹침)
-                {4, 180, 192},  // 목 15:00~16:00
-                {4, 186, 198},  // 목 15:30~16:30 (겹침)
-                {5, 204, 216},  // 금 17:00~18:00
-                {5, 210, 228},  // 금 17:30~19:00
-                {1, 132, 150},  // 월 11:00~12:30
-                {2, 96, 108},   // 화 08:00~09:00
-                {3, 144, 156},  // 수 12:00~13:00
-                {4, 198, 210},  // 목 16:30~17:30
-                {5, 228, 240},  // 금 19:00~20:00
-                {6, 120, 132},  // 토 10:00~11:00
-                {6, 132, 144},  // 토 11:00~12:00
-                {6, 144, 162},  // 토 12:00~13:30
-                {0, 108, 120},  // 일 09:00~10:00
-                {0, 120, 132}   // 일 10:00~11:00
-        };
-
-        for (int i = 0; i < 20; i++) {
-            Lecture lecture = Lecture.builder()
-                    .code("LEC" + (i + 1))
-                    .codeSection("0" + ((i % 3) + 1)) // 01 ~ 03
-                    .name("강의" + (i + 1))
-                    .professor("교수" + (i + 1))
-                    .type("전공선택")
-                    .credit("3")
-                    .target("3학년")
-                    .notice("공지사항" + (i + 1))
-                    .category(category)
-                    .build();
-
-            int[] time = timeTable[i];
-            LectureTime lectureTime = new LectureTime(time[0], time[1], time[2]);
-
-            lecture.addLectureTime(lectureTime);
-            em.persist(lecture);
         }
     }
 
@@ -214,17 +189,24 @@ class TimetableServiceTest {
     }
 
     String nowYear = "2025";
-    String nowSemester = "1";
+    String nowSemester = "2";
 
 
     @Test
 //    @DisplayName("claer 왜 해야하는지")
+//    @Rollback(value = false)
     public void 시간표저장() {
         // given
         Long myId = join();
         saveUserDetails(myId);
-        List<Long> saveLectureIds = List.of(11L, 12L, 13L, 14L, 15L);
-        CreateTimetableDto createTimetableDto = new CreateTimetableDto(nowYear, nowSemester, "테스트이름", false, saveLectureIds);
+
+        List<InternalLectureDto> saveLectures = new ArrayList<>();
+        saveLectures.addAll(encodedCustomLectures);
+        for(String codeSection : officialLectureCodeSections) {
+            saveLectures.add(everytimeUtil.searchEverytimeLectures("code", codeSection, nowYear, nowSemester, 0, 50).get(0));
+        }
+
+        CreateTimetableDto createTimetableDto = new CreateTimetableDto(nowYear, nowSemester, "테스트시간표1", false, saveLectures);
 
         // when
         Long timetableId = timetableService.save(createTimetableDto);
@@ -233,10 +215,11 @@ class TimetableServiceTest {
 
         // then
         InquiryTimeTableDto findTimetable = timetableService.getTimetablesAboutYearAndSemester(nowYear, nowSemester).get(0);
-        List<Long> findLectureIds = findTimetable.getLectures().stream().map(t -> t.getId()).toList();
+        List<InternalLectureDto> findLectures = findTimetable.getLectures();
         Assertions.assertThat(findTimetable.getYear()).isEqualTo(nowYear);
         Assertions.assertThat(findTimetable.getSemester()).isEqualTo(nowSemester);
-        Assertions.assertThat(findLectureIds).isEqualTo(saveLectureIds);
+        Assertions.assertThat(findLectures).containsAll(encodedCustomLectures);
+        Assertions.assertThat(findLectures.stream().map(l -> l.getCodeSection())).containsAll(officialLectureCodeSections);
         Assertions.assertThat(timetableService.getMainTimetableWithLectures(nowYear, nowSemester)).isNull();
     }
 
@@ -246,8 +229,14 @@ class TimetableServiceTest {
         // given
         Long myId = join();
         saveUserDetails(myId);
-        List<Long> saveLectureIds = List.of(11L, 12L, 13L, 14L, 15L);
-        CreateTimetableDto createTimetableDto = new CreateTimetableDto(nowYear, nowSemester, "테스트이름", true, saveLectureIds);
+
+        List<InternalLectureDto> saveLectures = new ArrayList<>();
+        saveLectures.addAll(encodedCustomLectures);
+        for(String codeSection : officialLectureCodeSections) {
+            saveLectures.add(everytimeUtil.searchEverytimeLectures("code", codeSection, nowYear, nowSemester, 0, 50).get(0));
+        }
+
+        CreateTimetableDto createTimetableDto = new CreateTimetableDto(nowYear, nowSemester, "테스트시간표1", true, saveLectures);
 
         // when
         Long timetableId = timetableService.save(createTimetableDto);
@@ -256,34 +245,47 @@ class TimetableServiceTest {
 
         // then
         InquiryTimeTableDto findTimetable = timetableService.getMainTimetableWithLectures(nowYear, nowSemester);
-        List<Long> findLectureIds = findTimetable.getLectures().stream().map(t -> t.getId()).toList();
+        List<InternalLectureDto> findLectures = findTimetable.getLectures();
         Assertions.assertThat(findTimetable.getYear()).isEqualTo(nowYear);
         Assertions.assertThat(findTimetable.getSemester()).isEqualTo(nowSemester);
-        Assertions.assertThat(findLectureIds).isEqualTo(saveLectureIds);
+        Assertions.assertThat(findLectures).containsAll(encodedCustomLectures);
+        Assertions.assertThat(findLectures.stream().map(l -> l.getCodeSection())).containsAll(officialLectureCodeSections);
     }
 
     @Test
 //    @DisplayName("clear 왜 해야하는지")
+//    @Rollback(value = false)
     public void 시간표수정() {
         // given
         Long myId = join();
         saveUserDetails(myId);
-        List<Long> saveLectureIds = List.of(11L, 12L, 13L, 14L, 15L);
-        List<Long> newLectureIds = List.of(13L, 14L, 15L, 16L, 17L);
-        CreateTimetableDto createTimetableDto = new CreateTimetableDto(nowYear, nowSemester, "테스트이름", false, saveLectureIds);
+
+        List<InternalLectureDto> saveLectures = new ArrayList<>();
+        saveLectures.addAll(encodedCustomLectures);
+        for(String codeSection : officialLectureCodeSections) {
+            saveLectures.add(everytimeUtil.searchEverytimeLectures("code", codeSection, nowYear, nowSemester, 0, 50).get(0));
+        }
+
+        CreateTimetableDto createTimetableDto = new CreateTimetableDto(nowYear, nowSemester, "테스트시간표1", false, saveLectures);
         Long timetableId = timetableService.save(createTimetableDto);
 
         // when
-        timetableService.editTimetable(timetableId, new LectureIdsDto(newLectureIds));
+        List<InternalLectureDto> saveLectures2 = new ArrayList<>();
+        saveLectures2.addAll(encodedCustomLectures2);
+        for(String codeSection : officialLectureCodeSections2) {
+            saveLectures2.add(everytimeUtil.searchEverytimeLectures("code", codeSection, nowYear, nowSemester, 0, 50).get(0));
+        }
+        timetableService.editTimetable(timetableId, saveLectures2);
         em.flush();
         em.clear();
 
         // then
         InquiryTimeTableDto findTimetable = timetableService.getTimetablesAboutYearAndSemester(nowYear, nowSemester).get(0);
-        List<Long> findLectureIds = findTimetable.getLectures().stream().map(t -> t.getId()).toList();
+        List<InternalLectureDto> findLectures = findTimetable.getLectures();
         Assertions.assertThat(findTimetable.getYear()).isEqualTo(nowYear);
         Assertions.assertThat(findTimetable.getSemester()).isEqualTo(nowSemester);
-        Assertions.assertThat(findLectureIds).isEqualTo(newLectureIds);
+        Assertions.assertThat(findLectures).containsAll(encodedCustomLectures2);
+        Assertions.assertThat(findLectures.stream().map(l -> l.getCodeSection())).containsAll(officialLectureCodeSections2);
     }
 
     @Test
@@ -291,8 +293,14 @@ class TimetableServiceTest {
         // given
         Long myId = join();
         saveUserDetails(myId);
-        List<Long> saveLectureIds = List.of(11L, 12L, 13L, 14L, 15L);
-        CreateTimetableDto createTimetableDto = new CreateTimetableDto(nowYear, nowSemester, "테스트이름", false, saveLectureIds);
+
+        List<InternalLectureDto> saveLectures = new ArrayList<>();
+        saveLectures.addAll(encodedCustomLectures);
+        for(String codeSection : officialLectureCodeSections) {
+            saveLectures.add(everytimeUtil.searchEverytimeLectures("code", codeSection, nowYear, nowSemester, 0, 50).get(0));
+        }
+
+        CreateTimetableDto createTimetableDto = new CreateTimetableDto(nowYear, nowSemester, "테스트시간표1", false, saveLectures);
         Long timetableId = timetableService.save(createTimetableDto);
 
         // when
@@ -309,11 +317,22 @@ class TimetableServiceTest {
         // given
         Long myId = join();
         saveUserDetails(myId);
-        List<Long> saveLectureIds1 = List.of(11L, 12L, 13L, 14L, 15L);
-        List<Long> saveLectureIds2 = List.of(13L, 14L, 15L, 16L, 17L);
-        CreateTimetableDto createTimetableDto1 = new CreateTimetableDto(nowYear, nowSemester, "테스트이름", true, saveLectureIds1);
-        CreateTimetableDto createTimetableDto2 = new CreateTimetableDto(nowYear, nowSemester, "테스트이름", false, saveLectureIds2);
-        Long timetableId1 = timetableService.save(createTimetableDto1);
+
+        // 1번쨰 시간표
+        List<InternalLectureDto> saveLectures = new ArrayList<>();
+        saveLectures.addAll(encodedCustomLectures);
+        for(String codeSection : officialLectureCodeSections) {
+            saveLectures.add(everytimeUtil.searchEverytimeLectures("code", codeSection, nowYear, nowSemester, 0, 50).get(0));
+        }
+        CreateTimetableDto createTimetableDto = new CreateTimetableDto(nowYear, nowSemester, "테스트시간표1", true, saveLectures);
+        Long timetableId = timetableService.save(createTimetableDto);
+
+        List<InternalLectureDto> saveLectures2 = new ArrayList<>();
+        saveLectures2.addAll(encodedCustomLectures2);
+        for(String codeSection : officialLectureCodeSections2) {
+            saveLectures2.add(everytimeUtil.searchEverytimeLectures("code", codeSection, nowYear, nowSemester, 0, 50).get(0));
+        }
+        CreateTimetableDto createTimetableDto2 = new CreateTimetableDto(nowYear, nowSemester, "테스트시간표2", false, saveLectures2);
         Long timetableId2 = timetableService.save(createTimetableDto2);
 
         // when
@@ -323,7 +342,8 @@ class TimetableServiceTest {
 
         // then
         InquiryTimeTableDto timetable = timetableService.getMainTimetableWithLectures(nowYear, nowSemester);
-        Assertions.assertThat(timetable.getLectures().stream().map(InternalLectureDto::getId)).isEqualTo(saveLectureIds2);
+        Assertions.assertThat(timetable.getLectures()).containsAll(encodedCustomLectures2);
+        Assertions.assertThat(timetable.getLectures().stream().map(l -> l.getCodeSection())).containsAll(officialLectureCodeSections2);
     }
 
     @Test
@@ -331,13 +351,22 @@ class TimetableServiceTest {
         // given
         Long friendId = 1L;
         saveUserDetails(friendId);
-        List<Long> friendSaveLectureIds = List.of(11L, 12L, 13L, 14L, 15L);
-        List<Long> mySaveLectureIds = List.of(13L, 14L, 15L, 16L, 17L);
-        Long friendTimetableId = timetableService.save(new CreateTimetableDto(nowYear, nowSemester, "테스트1", true, friendSaveLectureIds));
+        List<InternalLectureDto> saveFriendLectures = new ArrayList<>();
+        saveFriendLectures.addAll(encodedCustomLectures);
+        for(String codeSection : officialLectureCodeSections) {
+            saveFriendLectures.add(everytimeUtil.searchEverytimeLectures("code", codeSection, nowYear, nowSemester, 0, 50).get(0));
+        }
+        Long friendTimetableId = timetableService.save(new CreateTimetableDto(nowYear, nowSemester, "테스트1", true, saveFriendLectures));
         SecurityContextHolder.clearContext();
+
+        List<InternalLectureDto> mySaveLectures = new ArrayList<>();
+        mySaveLectures.addAll(encodedCustomLectures2);
+        for(String codeSection : officialLectureCodeSections2) {
+            mySaveLectures.add(everytimeUtil.searchEverytimeLectures("code", codeSection, nowYear, nowSemester, 0, 50).get(0));
+        }
         Long myId = join();
         saveUserDetails(myId);
-        Long myTimetableId = timetableService.save(new CreateTimetableDto(nowYear, nowSemester, "테스트2", true, mySaveLectureIds));
+        Long myTimetableId = timetableService.save(new CreateTimetableDto(nowYear, nowSemester, "테스트2", true, mySaveLectures));
 
         // when
         CompareMemberDto compareMemberDto = new CompareMemberDto(nowYear, nowSemester, List.of(friendId));
@@ -346,16 +375,23 @@ class TimetableServiceTest {
         em.clear();
 
         // then
-        // 겹치는 강의는 13, 14, 15
+        // 공식 강의만 겹쳐야함
         Member friend = memberRepository.findById(friendId).get();
-        List<Long> expectedLectureIds = List.of(13L, 14L, 15L);
-        List<Long> actualLectureIds = compareTimetableDtos.stream()
-                .map(dto -> dto.getInternalLectureDto().getId())
+
+        // 교집합 구하기 (공식 강의 기준)
+        Set<String> expectedCodeSections = new HashSet<>(officialLectureCodeSections);
+        expectedCodeSections.retainAll(officialLectureCodeSections2);
+
+        // 실제 비교 결과의 codeSection 추출
+        List<String> actualCodeSections = compareTimetableDtos.stream()
+                .map(dto -> dto.getInternalLectureDto().getCodeSection())
                 .toList();
 
-        Assertions.assertThat(actualLectureIds)
-                .containsExactlyInAnyOrderElementsOf(expectedLectureIds);
+        // 공식 강의 교집합이 정확히 포함되어 있는지 (순서 무시)
+        Assertions.assertThat(actualCodeSections)
+                .containsExactlyInAnyOrderElementsOf(expectedCodeSections);
 
+        // 친구 정보 검증
         for (CompareTimetableDto dto : compareTimetableDtos) {
             Assertions.assertThat(dto.getUsernames()).containsExactly(friend.getUsername());
             Assertions.assertThat(dto.getStudentIds()).containsExactly(friend.getStudentId());
@@ -367,15 +403,22 @@ class TimetableServiceTest {
         // given
         Long friendId = 1L;
         saveUserDetails(friendId);
-        List<Long> friendSaveLectureIds = List.of(11L, 12L, 13L, 14L, 15L);
-        List<Long> mySaveLectureIds = List.of(13L, 14L, 15L, 16L, 17L);
-        Long friendTimetableId = timetableService.save(new CreateTimetableDto(nowYear, nowSemester, "테스트1", true, friendSaveLectureIds));
+        List<InternalLectureDto> saveFriendLectures = new ArrayList<>();
+        saveFriendLectures.addAll(encodedCustomLectures);
+        for(String codeSection : officialLectureCodeSections) {
+            saveFriendLectures.add(everytimeUtil.searchEverytimeLectures("code", codeSection, nowYear, nowSemester, 0, 50).get(0));
+        }
+        Long friendTimetableId = timetableService.save(new CreateTimetableDto(nowYear, nowSemester, "테스트1", true, saveFriendLectures));
         SecurityContextHolder.clearContext();
+
+        List<InternalLectureDto> mySaveLectures = new ArrayList<>();
+        mySaveLectures.addAll(encodedCustomLectures2);
+        for(String codeSection : officialLectureCodeSections2) {
+            mySaveLectures.add(everytimeUtil.searchEverytimeLectures("code", codeSection, nowYear, nowSemester, 0, 50).get(0));
+        }
         Long myId = join();
         saveUserDetails(myId);
-        Long myTimetableId = timetableService.save(new CreateTimetableDto(nowYear, nowSemester, "테스트2", true, mySaveLectureIds));
-        em.flush();
-        em.clear();
+        Long myTimetableId = timetableService.save(new CreateTimetableDto(nowYear, nowSemester, "테스트2", true, mySaveLectures));
 
         // when
         List<Long> friendIds = new ArrayList<>();
@@ -385,15 +428,18 @@ class TimetableServiceTest {
         em.flush();
         em.clear();
 
-        // then
-        List<Long> allSaveLectureIds = new ArrayList<>();
-        allSaveLectureIds.addAll(mySaveLectureIds);
-        allSaveLectureIds.addAll(friendSaveLectureIds);
+        System.out.println("찾은거");
 
-        Assertions.assertThat(allLectures.size()).isEqualTo(allSaveLectureIds.size());
-        for(InternalLectureDto lecture : allLectures) {
-            Assertions.assertThat(allSaveLectureIds).contains(lecture.getId());
-        }
+        // then
+        List<InternalLectureDto> allSaveLectures = new ArrayList<>();
+        allSaveLectures.addAll(mySaveLectures);
+        allSaveLectures.addAll(saveFriendLectures);
+
+        Assertions.assertThat(allLectures)
+                .usingRecursiveComparison()
+                .ignoringFields("id")
+                .ignoringCollectionOrder()
+                .isEqualTo(allSaveLectures);
     }
 
 

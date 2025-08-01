@@ -84,7 +84,8 @@ public class SecurityConfig {
                         "/categories/search",
                         "/everytime/categories",
                         "/everytime/lectures/category",
-                        "/everytime/lectures/search"
+                        "/everytime/lectures/search",
+                        "/everytime/timetables"
                 ).permitAll() // 인증 안받아도 되는 요청
                 .requestMatchers("/admin").hasAuthority("ADMIN") // 권한과 인증이 필요한 요청
                 .anyRequest().authenticated()); // 인증이 필요한 요청

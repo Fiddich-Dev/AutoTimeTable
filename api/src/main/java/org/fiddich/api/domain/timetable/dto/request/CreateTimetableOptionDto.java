@@ -1,4 +1,4 @@
-package org.fiddich.api.domain.timetable.dto;
+package org.fiddich.api.domain.timetable.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
@@ -9,11 +9,14 @@ import java.util.List;
 @AllArgsConstructor
 public class CreateTimetableOptionDto {
 
+    String year;
+    String semester;
+
     int targetMajorCnt;
     int targetCultureCnt;
-    List<Long> likeLectureCode;
-    List<Long> dislikeLectureCode;
-    List<Long> categoryIds;
+    List<String> likeOfficialLectureCodeSection;
+    List<String> dislikeOfficialLectureCodeSection;
+    List<String> categoryIds;
     int[][] usedTime;
 
     int minCredit;

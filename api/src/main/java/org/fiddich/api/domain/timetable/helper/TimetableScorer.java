@@ -1,8 +1,11 @@
 package org.fiddich.api.domain.timetable.helper;
 
+import org.fiddich.api.domain.everytime.dto.Subject;
+import org.fiddich.api.domain.everytime.dto.TimePlace;
 import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
 import org.fiddich.coreinfradomain.domain.Lecture.LectureTime;
 
+import java.sql.Time;
 import java.util.*;
 
 public class TimetableScorer {
@@ -15,26 +18,26 @@ public class TimetableScorer {
         this.preferAfternoon = preferAfternoon;
     }
 
-    public int score(List<Lecture> lectures) {
+    public int score(List<Subject> subjects) {
         int score = 0;
 
         // 1. 빈 시간(공강) 개수 적을수록 좋음
-        int emptyGaps = countEmptyGapsOverOneHour(lectures);
+        int emptyGaps = countEmptyGapsOverOneHour(subjects);
         score -= emptyGaps * 10;
 
         // 2. 수업 있는 요일 개수 적을수록 좋음
-        int days = countDaysWithLectures(lectures);
+        int days = countDaysWithLectures(subjects);
         score -= days * 10;
 
         // 3. 오전 수업 선호
         if (preferMorning) {
-            int morningCount = countMorningLectures(lectures);
+            int morningCount = countMorningLectures(subjects);
             score += morningCount * 5;  // 많을수록 좋음
         }
 
         // 4. 오후 수업 선호
         if (preferAfternoon) {
-            int afternoonCount = countAfternoonLectures(lectures);
+            int afternoonCount = countAfternoonLectures(subjects);
             score += afternoonCount * 5;  // 많을수록 좋음
         }
 
@@ -42,45 +45,45 @@ public class TimetableScorer {
     }
 
     // 오전 수업: 12시 이전 시작
-    private int countMorningLectures(List<Lecture> lectures) {
-        return (int) lectures.stream()
-                .flatMap(l -> l.getLectureTimes().stream())
-                .mapToInt(LectureTime::getStart)
+    private int countMorningLectures(List<Subject> subjects) {
+        return (int) subjects.stream()
+                .flatMap(s -> s.getTimeplaceList().stream())
+                .map(tp -> Integer.parseInt(tp.getStart()))
                 .filter(start -> start * 5 < 12 * 60)
                 .count();
     }
 
     // 오후 수업: 13시 이후 시작
-    private int countAfternoonLectures(List<Lecture> lectures) {
-        return (int) lectures.stream()
-                .flatMap(l -> l.getLectureTimes().stream())
-                .mapToInt(LectureTime::getStart)
+    private int countAfternoonLectures(List<Subject> subjects) {
+        return (int) subjects.stream()
+                .flatMap(s -> s.getTimeplaceList().stream())
+                .map(tp -> Integer.parseInt(tp.getStart()))
                 .filter(start -> start * 5 >= 13 * 60)
                 .count();
     }
 
     // 요일 개수
-    private int countDaysWithLectures(List<Lecture> lectures) {
-        return (int) lectures.stream()
-                .flatMap(l -> l.getLectureTimes().stream())
-                .map(LectureTime::getDay)
+    private int countDaysWithLectures(List<Subject> subjects) {
+        return (int) subjects.stream()
+                .flatMap(s -> s.getTimeplaceList().stream())
+                .map(tp -> Integer.parseInt(tp.getDay()))
                 .distinct()
                 .count();
     }
 
     // 공강 개수 (1시간 이상 빈 시간)
-    private int countEmptyGapsOverOneHour(List<Lecture> lectures) {
+    private int countEmptyGapsOverOneHour(List<Subject> subjects) {
         Map<Integer, List<int[]>> timeByDay = new HashMap<>();
 
-        for (Lecture lecture : lectures) {
-            List<LectureTime> lectureTimes = lecture.getLectureTimes();
-            for (LectureTime lectureTime : lectureTimes) {
-                if(lectureTime == null) {
+        for (Subject subject : subjects) {
+            List<TimePlace> timePlaceList = subject.getTimeplaceList();
+            for (TimePlace timePlace : timePlaceList) {
+                if(timePlace == null) {
                     continue;
                 }
-                int day = lectureTime.getDay();
-                int start = lectureTime.getStart() * 5;
-                int end = lectureTime.getEnd() * 5;
+                int day = Integer.parseInt(timePlace.getDay());
+                int start = Integer.parseInt(timePlace.getStart()) * 5;
+                int end = Integer.parseInt(timePlace.getEnd()) * 5;
 
                 timeByDay.computeIfAbsent(day, k -> new ArrayList<>()).add(new int[]{start, end});
             }
@@ -101,10 +104,5 @@ public class TimetableScorer {
         return totalGaps;
     }
 
-    private int parseTimeToMinutes(String timeStr) {
-        int hour = Integer.parseInt(timeStr) / 100;
-        int minute = Integer.parseInt(timeStr) % 100;
-        return hour * 60 + minute;
-    }
 }
 

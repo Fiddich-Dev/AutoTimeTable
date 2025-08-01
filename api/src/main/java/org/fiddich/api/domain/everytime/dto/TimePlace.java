@@ -1,4 +1,4 @@
-package org.fiddich.api.domain.timetable;
+package org.fiddich.api.domain.everytime.dto;
 
 import lombok.*;
 
