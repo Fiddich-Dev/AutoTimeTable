@@ -152,7 +152,7 @@ class FriendServiceTest {
     void 친구요청보내기() throws Exception {
         // given
         Long myId = join();
-        login();
+//        login();
         saveUserDetails(myId);
 
         // when
@@ -172,7 +172,7 @@ class FriendServiceTest {
     void 친구요청수락() throws Exception {
         // given
         Long myId = join();
-        login();
+//        login();
         saveUserDetails(myId);
 
         Long friendId = ids.get(0);
@@ -198,7 +198,7 @@ class FriendServiceTest {
     void 친구요청거절() throws Exception {
         // given
         Long myId = join();
-        login();
+//        login();
         saveUserDetails(myId);
 
         Long friendId = ids.get(0);
@@ -224,7 +224,7 @@ class FriendServiceTest {
     void 친구삭제() throws Exception {
         // given
         Long myId = join();
-        login();
+//        login();
         saveUserDetails(myId);
 
         Long friendId = ids.get(0);
@@ -252,7 +252,7 @@ class FriendServiceTest {
     void 친구검색() throws Exception {
         // given
         Long myId = join();
-        login();
+//        login();
         saveUserDetails(myId);
 
         // 보류중인 친구
