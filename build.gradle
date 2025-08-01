@@ -62,7 +62,7 @@ subprojects {
 		annotationProcessor 'org.projectlombok:lombok'
 	}
 
-	test {
+	tasks.named('test') {
 		useJUnitPlatform()
 	}
 
