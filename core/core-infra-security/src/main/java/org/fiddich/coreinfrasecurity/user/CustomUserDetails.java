@@ -2,7 +2,6 @@ package org.fiddich.coreinfrasecurity.user;
 
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import org.fiddich.coreinfradomain.domain.Lecture.School;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;

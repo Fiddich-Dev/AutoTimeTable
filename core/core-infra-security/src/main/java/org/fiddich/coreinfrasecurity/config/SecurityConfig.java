@@ -10,7 +10,7 @@ import org.fiddich.coreinfrasecurity.jwt.util.JWTUtil;
 import org.fiddich.coreinfrasecurity.jwt.filter.LoginFilter;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.authentication.configuration.AuthenticationConfiguration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -18,9 +18,15 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.access.AccessDeniedHandler;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.web.authentication.logout.LogoutFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
 
 @Slf4j
 @Configuration
@@ -31,8 +37,9 @@ public class SecurityConfig {
     //AuthenticationManager가 인자로 받을 AuthenticationConfiguraion 객체 생성자 주입
     private final AuthenticationConfiguration authenticationConfiguration;
     private final JWTUtil jwtUtil;
-//    private final RedisTemplate<String, String> redisTemplate;
     private final RedisUtil redisUtil;
+
+    private final String[] swaggerUrls = {"/swagger-ui/**", "/v3/**"};
 
     //AuthenticationManager Bean 등록
     @Bean
@@ -44,6 +51,7 @@ public class SecurityConfig {
     public BCryptPasswordEncoder bCryptPasswordEncoder() {
         return new BCryptPasswordEncoder();
     }
+
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
@@ -59,6 +67,8 @@ public class SecurityConfig {
 
         //경로별 인가 작업
         http.authorizeHttpRequests((auth) -> auth
+                .requestMatchers(HttpMethod.GET, "/timetables/everytime").permitAll()
+                .requestMatchers(swaggerUrls).permitAll()
                 .requestMatchers(
                         "/h2-console/**",
                         "/",
@@ -70,7 +80,12 @@ public class SecurityConfig {
                         "/mail/send",
                         "/mail/verify",
                         "/lectures/search",
-                        "/categories"
+                        "/categories",
+                        "/categories/search",
+                        "/everytime/categories",
+                        "/everytime/lectures/category",
+                        "/everytime/lectures/search",
+                        "/everytime/timetables"
                 ).permitAll() // 인증 안받아도 되는 요청
                 .requestMatchers("/admin").hasAuthority("ADMIN") // 권한과 인증이 필요한 요청
                 .anyRequest().authenticated()); // 인증이 필요한 요청
@@ -87,6 +102,8 @@ public class SecurityConfig {
         http.sessionManagement((session) -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS));
 
+
         return http.build();
     }
+
 }

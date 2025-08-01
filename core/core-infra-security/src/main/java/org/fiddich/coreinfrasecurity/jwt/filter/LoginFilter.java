@@ -6,8 +6,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.fiddich.coreinfradomain.domain.Lecture.School;
-import org.fiddich.coreinfradomain.domain.Member.SchoolNameConverter;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
 import org.fiddich.coreinfraredis.util.RedisUtil;
 import org.fiddich.coreinfrasecurity.jwt.util.HttpResponseUtil;

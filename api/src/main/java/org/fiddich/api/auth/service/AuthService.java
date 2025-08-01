@@ -1,22 +1,16 @@
 package org.fiddich.api.auth.service;
 
-import jakarta.mail.MessagingException;
-import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import org.fiddich.api.auth.dto.EmailDto;
-import org.fiddich.coreinfradomain.domain.Member.SchoolNameConverter;
 import org.fiddich.coreinfraemail.EmailUtil;
 import org.fiddich.coreinfraredis.util.RedisUtil;
 import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;
 import org.fiddich.coreinfrasecurity.jwt.util.JWTUtil;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
 import java.util.NoSuchElementException;
 import java.util.Objects;
-import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 

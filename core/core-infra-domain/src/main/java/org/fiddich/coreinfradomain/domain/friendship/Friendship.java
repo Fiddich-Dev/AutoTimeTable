@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.*;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 
+import java.util.Objects;
+
 @Entity
 @Getter
 @Builder
@@ -26,16 +28,20 @@ public class Friendship {
     @Enumerated(EnumType.STRING)
     private FriendshipStatus friendshipStatus;
 
-    // 도메인 메서드
+    // 수락
     public void accept() {
         this.friendshipStatus = FriendshipStatus.ACCEPTED;
     }
 
-    public void sendFriendshipRequest(Member requester, Member receiver) {
-//        this.requester = requester;
-//        this.receiver = receiver;
-        receiver.getReceivedFriendships().add(this);
-        requester.getRequestFriendships().add(this);
+    @Override
+    public boolean equals(Object o) {
+        if (o == null || getClass() != o.getClass()) return false;
+        Friendship that = (Friendship) o;
+        return Objects.equals(id, that.id);
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hashCode(id);
+    }
 }

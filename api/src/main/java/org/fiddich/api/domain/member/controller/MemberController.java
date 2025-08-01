@@ -5,19 +5,9 @@ import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.domain.member.dto.*;
 import org.fiddich.api.domain.member.MemberService;
 import lombok.RequiredArgsConstructor;
-import org.fiddich.coreinfradomain.domain.Member.SchoolNameConverter;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
-import org.jsoup.Connection;
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.*;
-
-
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-import java.util.List;
-import java.util.NoSuchElementException;
 
 @Slf4j
 @RestController
@@ -48,9 +38,6 @@ public class MemberController {
         return ApiResponse.onSuccess(null);
     }
 
-
-
-
     // 인증 메일은 보낸다
     // 인증이 되면 비밀번호 재설정 기회는 준다
     @PatchMapping("/password-reset")
@@ -60,20 +47,4 @@ public class MemberController {
         return ApiResponse.onSuccess(null);
     }
 
-    // 아마 안쓸듯
-    @PostMapping("/auth/school")
-    public ApiResponse<?> authSchool(@RequestBody AuthSchoolDto authSchoolDto) throws Exception {
-        log.info("authSchool");
-        AuthSchoolResponse authSchoolResponse = memberService.authSchool(authSchoolDto);
-        // returncode, uid, username
-        if(authSchoolResponse == null) {
-            throw new NoSuchElementException("로그인 정보 없음");
-        }
-        if(authSchoolResponse.getReturnCode().equals("success")) {
-            return ApiResponse.onSuccess(authSchoolResponse);
-        }
-        else {
-            return ApiResponse.onFailure("123", "123");
-        }
-    }
 }

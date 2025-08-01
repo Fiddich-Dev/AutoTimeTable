@@ -1,0 +1,10 @@
+spring:
+
+#  config:
+#    import: optional:file:.env[.properties]
+
+  profiles:
+    active: test
+    include: core-infra-redis, core-infra-db, core-infra-security, core-infra-email
+
+

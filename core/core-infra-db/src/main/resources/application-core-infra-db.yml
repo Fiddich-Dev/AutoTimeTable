@@ -1,26 +1,4 @@
 
-
-#spring.config.activate.on-profile: local
-#
-#spring:
-#  datasource:
-#    driver-class-name: com.mysql.cj.jdbc.Driver
-#    url: jdbc:mysql://localhost:3307/sponus
-#    username: root
-#    password: root1234!
-#  jpa:
-#    database: mysql
-#    hibernate:
-#      ddl-auto: create-drop
-#    open-in-view: false
-#    show-sql: true
-#    properties:
-#      hibernate:
-#        default_batch_fetch_size: 100
-
-
-spring.config.import: application-secret.yml
-
 spring.config.activate.on-profile: local
 
 spring:
@@ -32,7 +10,7 @@ spring:
   jpa:
     database: mysql
     hibernate:
-      ddl-auto: create
+      ddl-auto: none
     properties:
       hibernate:
         show_sql: true
@@ -52,7 +30,7 @@ spring:
   jpa:
     database: mysql
     hibernate:
-      ddl-auto: update
+      ddl-auto: create
     open-in-view: false
     show-sql: true
     properties:
@@ -70,7 +48,7 @@ spring:
     password:
   jpa:
     hibernate:
-      ddl-auto: none
+      ddl-auto: create
     properties:
       hibernate:
         show_sql: true

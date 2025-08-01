@@ -5,7 +5,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.domain.timetable.dto.*;
 import org.fiddich.api.domain.timetable.TimetableService;
-import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
+import org.fiddich.api.domain.timetable.dto.request.CompareMemberDto;
+import org.fiddich.api.domain.timetable.dto.request.CreateTimetableOptionDto;
+import org.fiddich.api.domain.timetable.dto.request.EditTimetableDto;
+import org.fiddich.api.domain.timetable.dto.request.TimetableIdDto;
+import org.fiddich.api.domain.timetable.dto.response.CompareTimetableDto;
+import org.fiddich.api.domain.timetable.dto.response.YearAndSemesterDto;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
 import org.springframework.web.bind.annotation.*;
 
@@ -15,7 +20,7 @@ import java.util.List;
 @RestController
 @RequiredArgsConstructor
 public class TimetableController {
-    // 시간표에 커스텀 시간표 안뜬다, 저장은 됨
+
     private final TimetableService timetableService;
 
     @PostMapping("/timetables")
@@ -48,24 +53,18 @@ public class TimetableController {
         }
     }
 
-    @PostMapping("/timetables/everytime")
-    public ApiResponse<Void> saveEveryTimetable(@RequestBody CreateTimetableWithExternalLecturesDto createTimetableWithExternalLecturesDto) {
-        log.info("에타 시간표 저장: {]", createTimetableWithExternalLecturesDto);
-        timetableService.createTimetableWithExternalLectures(createTimetableWithExternalLecturesDto);
-        return ApiResponse.onSuccess(null);
-    }
+//    @PostMapping("/timetables/everytime")
+//    public ApiResponse<Void> saveEveryTimetable(@RequestBody CreateTimetableDto createTimetableDto) {
+//        log.info("에타 시간표 저장: {]", createTimetableDto);
+//        everytimeService.createTimetableWithExternalLectures(createTimetableWithExternalLecturesDto);
+//        return ApiResponse.onSuccess(null);
+//    }
 
-    @GetMapping("/timetables/everytime")
-    public ApiResponse<List<CreateTimetableWithExternalLecturesDto>> getAlleverytime(@RequestParam String url) throws Exception {
-        log.info("에타 시간표 모두 가져오기: {}", url);
-        List<CreateTimetableWithExternalLecturesDto> timetables = timetableService.allEverytimeMapping(url);
-        return ApiResponse.onSuccess(timetables);
-    }
-
+    // 변경
     @PutMapping("/timetables/{timetableId}")
-    public ApiResponse<Void> editTimetable(@PathVariable Long timetableId, @RequestBody LectureIdsDto lectureIdsDto) {
-        log.info("{}번 시간표 대체: {}", timetableId, lectureIdsDto);
-        timetableService.editTimetable(timetableId, lectureIdsDto);
+    public ApiResponse<Void> editTimetable(@PathVariable Long timetableId, @RequestBody List<InternalLectureDto> internalLectureDtos) {
+        log.info("{}번 시간표 대체: {}", timetableId, internalLectureDtos);
+        timetableService.editTimetable(timetableId, internalLectureDtos);
         return ApiResponse.onSuccess(null);
     }
 
@@ -91,24 +90,6 @@ public class TimetableController {
         return ApiResponse.onSuccess(null);
     }
 
-    @GetMapping("/lectures/search")
-    public ApiResponse<List<InternalLectureDto>> searchLectures(@RequestParam String keyword) {
-        log.info("{}로 강의 검색", keyword);
-        return ApiResponse.onSuccess(timetableService.searchLecturesByKeyword(keyword));
-    }
-    // 아마 안쓸듯
-    @GetMapping("/lectures")
-    public ApiResponse<List<Lecture>> getAllLectures() {
-        log.info("모든 강의 조회");
-        return ApiResponse.onSuccess(timetableService.getAllLectures());
-    }
-
-    @GetMapping("/categories")
-    public ApiResponse<List<InquiryDepartmentDto>> getAllCategories(@RequestParam String year, @RequestParam String semester) {
-        log.info("모든 학과 조회 year = {}, semester = {}", year, semester);
-        return ApiResponse.onSuccess(timetableService.getAllCategories(year, semester));
-    }
-
     @PostMapping("/timetables/compare-lecture")
     public ApiResponse<List<CompareTimetableDto>> compareTimetable(@RequestBody CompareMemberDto compareMemberDto) {
         log.info("겹치는 강의 비교");
@@ -121,5 +102,15 @@ public class TimetableController {
         log.info("겹치는 시간 비교");
         return ApiResponse.onSuccess(timetableService.compareFreeTime(compareMemberDto));
     }
+
+//    @GetMapping("/everytime/categories")
+//    public ApiResponse<List<Category>> everytimeCategories(@RequestParam String year, @RequestParam String semester) {
+//        log.info("에브리타임에서 학과 다 가져오기");
+//        return ApiResponse.onSuccess(everytimeService.everytimeCategories(year, semester));
+//    }
+
+
+
+
 
 }
