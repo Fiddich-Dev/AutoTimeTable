@@ -267,6 +267,8 @@ class FriendServiceTest {
         SecurityContextHolder.clearContext();
         saveUserDetails(friendId1);
         friendService.acceptFriendRequest(new FriendShipDto(myId));
+        em.flush();
+        em.clear();
 
         // when
         SecurityContextHolder.clearContext();

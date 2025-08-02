@@ -1,5 +1,6 @@
 package org.fiddich.api.domain.friend;
 
+import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.domain.friend.dto.FriendShipDto;
@@ -13,13 +14,12 @@ import org.fiddich.coreinfrasecurity.user.CustomUserDetails;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.NoSuchElementException;
+import java.util.*;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
+@Transactional
 @RequiredArgsConstructor
 public class FriendService {
 
@@ -75,32 +75,41 @@ public class FriendService {
     }
 
     public List<SearchMemberDto> searchMemberByStudentId(String keyword, int page, int size) {
-        if(keyword == null || keyword.isEmpty()) {
+        if (keyword == null || keyword.isEmpty()) {
             return Collections.emptyList();
         }
 
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
 
-        List<Member> myFriends = me.getFriends();
+        // 1. 친구들의 ID를 Set으로 미리 추출합니다. (조회 성능 O(1))
+        Set<Long> myFriendIds = me.getFriends().stream()
+                .map(Member::getId)
+                .collect(Collectors.toSet());
 
+        // 2. 요청을 보내거나 받은 친구들의 ID를 Set으로 미리 추출합니다.
+        List<Member> pendingMembers = new ArrayList<>();
+        pendingMembers.addAll(friendshipRepository.findPendingRequests(me)); // 내가 받은 요청
+        pendingMembers.addAll(friendshipRepository.findPendingRequest(me.getId())); // 내가 보낸 요청
+
+        Set<Long> pendingFriendIds = pendingMembers.stream()
+                .map(Member::getId)
+                .collect(Collectors.toSet());
+
+        // 3. 학번으로 멤버를 검색합니다.
         List<Member> allMembers = memberRepository.findByStudentIdContaining(keyword, page, size);
-        allMembers.remove(me);
 
-        // 내가 요청 보냈거나, 받은 친구를 pending으로 표시
-        List<Member> pendingFriends = new ArrayList<>();
-        pendingFriends.addAll(friendshipRepository.findPendingRequests(me)); // 내가 받은 요청
-        pendingFriends.addAll(friendshipRepository.findPendingRequest(me.getId())); // 내가 보낸 요청
-
-//        List<Member> members = memberRepository.findByStudentIdContaining(keyword, page, size);
-//        members.remove(me);
-
+        // 4. 검색된 멤버 리스트를 스트림으로 변환하여 DTO로 만듭니다.
         return allMembers.stream()
+                // 나 자신은 검색 결과에서 제외합니다.
+                .filter(member -> !member.getId().equals(me.getId()))
+                // DTO로 변환하며 친구 상태를 설정합니다.
                 .map(member -> {
                     SearchFriendStatus status;
-                    if (myFriends.contains(member)) {
+                    // Member 객체가 아닌 ID로 포함 여부를 확인합니다.
+                    if (myFriendIds.contains(member.getId())) {
                         status = SearchFriendStatus.ALREADY_FRIEND;
-                    } else if (pendingFriends.contains(member)) {
+                    } else if (pendingFriendIds.contains(member.getId())) {
                         status = SearchFriendStatus.PENDING;
                     } else {
                         status = SearchFriendStatus.NOT_FRIEND;
