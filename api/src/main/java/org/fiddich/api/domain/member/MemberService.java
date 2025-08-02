@@ -1,5 +1,6 @@
 package org.fiddich.api.domain.member;
 
+import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.domain.member.dto.*;
 import org.fiddich.api.domain.timetable.TimetableService;
@@ -17,6 +18,7 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.NoSuchElementException;
 
 @Slf4j
@@ -30,6 +32,8 @@ public class MemberService {
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final LectureRepository lectureRepository;
     private final TimetableRepository timetableRepository;
+    private final EntityManager em;
+    private final TimetableService timetableService;
 
     public Long join(JoinDto joinDto) {
 //         학번이 안겹치는지 확인하는 로직
@@ -55,15 +59,17 @@ public class MemberService {
     }
 
     public void withdrawal() {
-         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String studentId = customUserDetails.getStudentId();
         Long id = customUserDetails.getId();
 
         log.info("탈퇴 요청 PK: {}", id);
         log.info("studentId = {}", studentId);
 
-//        lectureRepository.deleteCustomLecturesByMember(id);
-        timetableRepository.deleteAllTimetableByMemberId(id);
+        List<Timetable> allTimetables = timetableRepository.findAllByMember(customUserDetails.getId());
+        for(Timetable timetable : allTimetables) {
+            timetableRepository.deleteTimetable(timetable.getId());
+        }
         memberRepository.deleteById(id);
         // redis에서 studentId + ":refreshToken" 키 삭제
         redisUtil.deleteKey(studentId + ":refreshToken");
@@ -75,10 +81,21 @@ public class MemberService {
         me.changePassword(encodedPassword);
     }
 
-    public void changePassword(ResetPasswordDto resetPasswordDto) {
+    public void validPassword(PasswordDto passwordDto) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
-        String encodedPassword = bCryptPasswordEncoder.encode(resetPasswordDto.getNewPassword());
+        String nowPassword = passwordDto.getPassword();
+        boolean isMatch = bCryptPasswordEncoder.matches(nowPassword, me.getPassword());
+        if (!isMatch) {
+            throw new IllegalArgumentException("현재 비밀번호가 올바르지 않습니다.");
+        }
+    }
+
+    public void changePassword(PasswordDto passwordDto) {
+        CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        String newPassword = passwordDto.getPassword();
+        String encodedPassword = bCryptPasswordEncoder.encode(newPassword);
         me.changePassword(encodedPassword);
     }
 

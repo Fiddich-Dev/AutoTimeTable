@@ -21,8 +21,13 @@ public class TimetableRepository {
 
     private final EntityManager em;
 
+
     public void save(Timetable timetable) {
         em.persist(timetable);
+    }
+
+    public Optional<Timetable> findById(Long timetableId) {
+        return Optional.ofNullable(em.find(Timetable.class, timetableId));
     }
 
     // 시간표의 공식 강의까지 가져온다
@@ -144,9 +149,11 @@ public class TimetableRepository {
         }
     }
 
-    public void clearMainTimetable(Long memberId) {
-        em.createQuery("update Timetable t set t.isRepresent = false where t.member.id = :memberId")
+    public void clearMainTimetable(Long memberId, String year, String semester) {
+        em.createQuery("update Timetable t set t.isRepresent = false where t.member.id = :memberId and t.year = :year and t.semester = :semester")
                 .setParameter("memberId", memberId)
+                .setParameter("year", year)
+                .setParameter("semester", semester)
                 .executeUpdate();
     }
 
@@ -162,6 +169,15 @@ public class TimetableRepository {
                 .setParameter("memberId", memberId)
                 .executeUpdate();
     }
+
+    public List<Timetable> findAllByMember(Long memberId) {
+        return em.createQuery("select t from Timetable t where t.member.id = :memberId", Timetable.class)
+                .setParameter("memberId", memberId)
+                .getResultList();
+    }
+
+
+
 
 
 

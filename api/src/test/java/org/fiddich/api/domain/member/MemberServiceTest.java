@@ -46,10 +46,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @Transactional
 @AutoConfigureMockMvc
 @TestPropertySource(properties = {
-        "JWT_SECRET=salkdhjaslkdjsalkjdaslkjasdlkahskdsahdksahkdhaskdjhsakj",
+        "JWT_SECRET=aslkdjaslkdjsalkdjaslkdjsaldkjaslkdjass",
         "SMTP_PORT=587",
-        "SMTP_USERNAME=hiws9997@gmail.com",
-        "SMTP_PASSWORD=gedu ihvz eqsg qwtn",
+        "SMTP_USERNAME=schedule.ssku@gmail.com",
+        "SMTP_PASSWORD=tmus mpkv ppgq jtxn",
 })
 class MemberServiceTest {
 

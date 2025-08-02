@@ -40,6 +40,7 @@ public class TimetableService {
     private final LectureRepository lectureRepository;
     private final EntityManager em;
 
+
     public Long save(CreateTimetableDto createTimetableDto) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member member = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
@@ -68,7 +69,7 @@ public class TimetableService {
         }
 
         if(createTimetableDto.isRepresent()) {
-            timetableRepository.clearMainTimetable(member.getId());
+            timetableRepository.clearMainTimetable(member.getId(), createTimetableDto.getYear(), createTimetableDto.getSemester());
         }
 
         Timetable timetable = Timetable.builder()
@@ -158,10 +159,11 @@ public class TimetableService {
     // 완료
     public void changeMainTimetable(TimetableIdDto timetableIdDto) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        Timetable timetable = timetableRepository.findById(timetableIdDto.getTimetableId()).orElseThrow(() -> new NoSuchElementException("시간표가 없습니다."));
         Long memberId = customUserDetails.getId();
         Long timetableId = timetableIdDto.getTimetableId();
 
-        timetableRepository.clearMainTimetable(memberId);
+        timetableRepository.clearMainTimetable(memberId, timetable.getYear(), timetable.getSemester());
         timetableRepository.updateMainTimetable(timetableId);
     }
 

@@ -47,4 +47,18 @@ public class MemberController {
         return ApiResponse.onSuccess(null);
     }
 
+    @PostMapping("/password-valid")
+    public ApiResponse<Void> validPassword(@RequestBody PasswordDto passwordDto) {
+        log.info("password-valid");
+        memberService.validPassword(passwordDto);
+        return ApiResponse.onSuccess(null);
+    }
+
+    @PatchMapping("/password-change")
+    public ApiResponse<Void> changePassword(@RequestBody PasswordDto passwordDto) {
+        log.info("password-change");
+        memberService.changePassword(passwordDto);
+        return ApiResponse.onSuccess(null);
+    }
+
 }
