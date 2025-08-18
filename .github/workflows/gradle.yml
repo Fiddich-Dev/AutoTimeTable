@@ -40,61 +40,40 @@ jobs:
       
     - name: Build Docker image
       run: |
-        # docker build -t ${{ secrets.IMAGE_NAME }} . 
-
-        # aarch64로 빌드
-        docker buildx build --platform linux/arm64 \
-        -t ${{ secrets.IMAGE_NAME }} \
-        --output type=docker \
-        .
+        docker build -t ${{ secrets.IMAGE_NAME }} . 
         
     - name: Save Docker image to archive
       run: |
         docker save ${{ secrets.IMAGE_NAME }} | gzip > ${GITHUB_SHA}.tar.gz
-      
-    - name: Copy Docker image to Raspberry Pi
+        
+    
+    - name: Copy Docker image to EC2
       uses: appleboy/scp-action@v0.1.7
       with:
-        host: ${{ secrets.RAS_HOST }}
-        username: ${{ secrets.RAS_USER }}
-        key: ${{ secrets.RAS_KEY }}
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_KEY }}
         source: "${{ github.sha }}.tar.gz"
-        target: "/home/${{ secrets.RAS_USER }}/"
+        target: "/home/ubuntu"
 
-    - name: stop container
+    - name: stop and remove container, remove image
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.RAS_HOST }}
-        username: ${{ secrets.RAS_USER }}
-        key: ${{ secrets.RAS_KEY }}
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_KEY }}
         script: |
           docker stop ${{ secrets.CONTAINER_NAME }} || true
-
-    - name: remove container
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.RAS_HOST }}
-        username: ${{ secrets.RAS_USER }}
-        key: ${{ secrets.RAS_KEY }}
-        script: |
           docker rm ${{ secrets.CONTAINER_NAME }} || true
-
-    - name: remove image
-      uses: appleboy/ssh-action@v1.0.3
-      with:
-        host: ${{ secrets.RAS_HOST }}
-        username: ${{ secrets.RAS_USER }}
-        key: ${{ secrets.RAS_KEY }}
-        script: |
           docker rmi ${{ secrets.IMAGE_NAME }} || true
+
     
-    
-    - name: SSH into Raspberry Pi and run container
+    - name: SSH into EC2 and run container
       uses: appleboy/ssh-action@v1.0.3
       with:
-        host: ${{ secrets.RAS_HOST }}
-        username: ${{ secrets.RAS_USER }}
-        key: ${{ secrets.RAS_KEY }}
+        host: ${{ secrets.EC2_HOST }}
+        username: ${{ secrets.EC2_USER }}
+        key: ${{ secrets.EC2_KEY }}
         script: |
           
           # 이미지 로드
@@ -103,25 +82,22 @@ jobs:
 
           
           # .env 파일 생성 (반드시 추가)
-          # cat <<EOF > .env
-          # DB_URL=${{ secrets.DB_URL }}
-          # DB_USERNAME=${{ secrets.DB_USERNAME }}
-          # DB_PASSWORD=${{ secrets.DB_PASSWORD }}
-          # REDIS_HOST=${{ secrets.REDIS_HOST }}
-          # REDIS_PORT=${{ secrets.REDIS_PORT }}
-          # SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
-          # SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
-          # SMTP_PORT=${{ secrets.SMTP_PORT }}
-          # JWT_SECRET=${{ secrets.JWT_SECRET }}
-          # CONTAINER_NAME=${{ secrets.CONTAINER_NAME }}
-          # IMAGE_NAME=${{ secrets.IMAGE_NAME }}
-          # EOF
+          cat <<EOF > .env
+          DB_URL=${{ secrets.DB_URL }}
+          DB_USERNAME=${{ secrets.DB_USERNAME }}
+          DB_PASSWORD=${{ secrets.DB_PASSWORD }}
+          REDIS_HOST=${{ secrets.REDIS_HOST }}
+          REDIS_PORT=${{ secrets.REDIS_PORT }}
+          SMTP_USERNAME=${{ secrets.SMTP_USERNAME }}
+          SMTP_PASSWORD=${{ secrets.SMTP_PASSWORD }}
+          SMTP_PORT=${{ secrets.SMTP_PORT }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          EOF
           
           # 이미지 실행
-          # docker run --env-file ./.env -d -p 8080:8080 --name ${{ secrets.CONTAINER_NAME }} ${{ secrets.IMAGE_NAME }}
           docker run  --env-file ./.env   -e "SPRING_PROFILES_ACTIVE=prod"   -d -p 8080:8080   --name ${{ secrets.CONTAINER_NAME }}   ${{ secrets.IMAGE_NAME }}
+          
           #정리 
-          # sudo docker rmi $(sudo docker images -f "dangling=true" -q) --force
           rm -f ${{ github.sha }}.tar.gz
           rm -f ${{ github.sha }}.tar
-          # rm -f .env
+          rm -f .env
