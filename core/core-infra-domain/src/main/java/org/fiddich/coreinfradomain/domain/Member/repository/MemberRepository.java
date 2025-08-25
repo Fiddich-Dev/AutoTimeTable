@@ -1,56 +1,15 @@
 package org.fiddich.coreinfradomain.domain.Member.repository;
 
-import lombok.extern.slf4j.Slf4j;
 import org.fiddich.coreinfradomain.domain.Member.Member;
-import jakarta.persistence.EntityManager;
-import lombok.RequiredArgsConstructor;
-import org.fiddich.coreinfradomain.domain.friendship.Friendship;
-import org.fiddich.coreinfradomain.domain.friendship.FriendshipStatus;
-import org.springframework.dao.DuplicateKeyException;
-import org.springframework.stereotype.Repository;
-
-import java.util.ArrayList;
-import java.util.List;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
 import java.util.Optional;
 
-@Slf4j
-@Repository
-@RequiredArgsConstructor
-public class MemberRepository {
 
-    private final EntityManager em;
+public interface MemberRepository extends JpaRepository<Member, Long> {
 
-    public void save(Member member) {
-        em.persist(member);
-    }
+    Optional<Member> findByStudentId(String studentId);
 
-    public Optional<Member> findById(Long id) {
-        Member member = em.find(Member.class, id);
-        return Optional.ofNullable(member);
-    }
-
-    public Optional<Member> findByStudentId(String studentId) {
-        List<Member> result = em.createQuery("select m from Member m where m.studentId = :studentId", Member.class)
-                .setParameter("studentId", studentId)
-                .getResultList();
-
-        return result.isEmpty() ? Optional.empty() : Optional.of(result.get(0));
-    }
-
-    public List<Member> findByStudentIdContaining(String keyword, int page, int size) {
-        return em.createQuery("select m from Member m where m.studentId like :keyword", Member.class)
-                .setParameter("keyword", "%" + keyword + "%")
-                .setFirstResult(page * size)
-                .setMaxResults(size)
-                .getResultList();
-    }
-
-
-    public void deleteById(Long id) {
-        Member member = em.find(Member.class, id);
-        if(member != null) {
-            em.remove(member);
-        }
-    }
-
+    Page<Member> findByStudentIdContaining(String keyword, Pageable pageable);
 }

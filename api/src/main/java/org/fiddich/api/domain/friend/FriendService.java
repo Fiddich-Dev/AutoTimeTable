@@ -11,6 +11,9 @@ import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
 import org.fiddich.coreinfradomain.domain.friendship.repository.FriendshipRepository;
 import org.fiddich.coreinfrasecurity.user.CustomUserDetails;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
@@ -96,8 +99,11 @@ public class FriendService {
                 .map(Member::getId)
                 .collect(Collectors.toSet());
 
+        PageRequest pageRequest = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "studentId"));
+
         // 3. 학번으로 멤버를 검색합니다.
-        List<Member> allMembers = memberRepository.findByStudentIdContaining(keyword, page, size);
+        Page<Member> memberPage = memberRepository.findByStudentIdContaining(keyword, pageRequest);
+        List<Member> allMembers = memberPage.getContent();
 
         // 4. 검색된 멤버 리스트를 스트림으로 변환하여 DTO로 만듭니다.
         return allMembers.stream()

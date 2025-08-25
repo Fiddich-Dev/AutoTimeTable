@@ -3,8 +3,10 @@ package org.fiddich.api.auth.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
+import jakarta.persistence.EntityManagerFactory;
 import jakarta.transaction.Transactional;
 import org.assertj.core.api.Assertions;
+import org.fiddich.api.QueryCounter;
 import org.fiddich.api.auth.dto.EmailDto;
 import org.fiddich.api.domain.member.MemberService;
 import org.fiddich.api.domain.member.dto.JoinDto;
@@ -13,6 +15,8 @@ import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
 import org.fiddich.coreinfraredis.util.RedisUtil;
 import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;
 import org.fiddich.coreinfrasecurity.user.CustomUserDetails;
+import org.hibernate.SessionFactory;
+import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -137,9 +141,9 @@ class AuthServiceTest {
 
     @Test
     void 리이슈() throws Exception {
-
         Long id = join();
         System.out.println(id);
+
         JWTDto jwtDto = login();
         saveUserDetails(id);
 
