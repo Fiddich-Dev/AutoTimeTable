@@ -7,6 +7,7 @@ import jakarta.transaction.Transactional;
 import org.assertj.core.api.Assertions;
 import org.fiddich.api.domain.friend.FriendService;
 import org.fiddich.api.domain.member.dto.JoinDto;
+import org.fiddich.api.domain.member.dto.PasswordDto;
 import org.fiddich.api.domain.member.dto.ResetPasswordDto;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
@@ -26,6 +27,7 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
@@ -63,6 +65,8 @@ class MemberServiceTest {
     MemberRepository memberRepository;
     @Autowired
     FriendService friendService;
+    @Autowired
+    BCryptPasswordEncoder encoder;
 
     List<Long> ids = new ArrayList<>();
 
@@ -196,4 +200,30 @@ class MemberServiceTest {
                 .andExpect(jsonPath("$.content.refresh").exists());
     }
 
+    @Test
+    @DisplayName("비밀번호 변경")
+    void 비밀번호변경() throws Exception {
+        // given
+        Long myId = join();
+        Member me = memberRepository.findById(myId).get();
+        saveUserDetails(myId);
+
+        // when
+        PasswordDto passwordDto = new PasswordDto();
+        passwordDto.setPassword("틀린비밀번호");
+        Assertions.assertThatThrownBy(() -> {
+            throw new IllegalArgumentException();
+        });
+
+        passwordDto.setPassword("내비밀번호");
+        memberService.validPassword(passwordDto);
+        passwordDto.setPassword("새비밀번호");
+        memberService.changePassword(passwordDto);
+
+        em.flush();
+        em.clear();
+
+        // then
+        Assertions.assertThat(encoder.matches("새비밀번호", me.getPassword())).isTrue();
+    }
 }

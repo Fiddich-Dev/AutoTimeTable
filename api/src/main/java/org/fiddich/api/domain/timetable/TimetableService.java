@@ -7,7 +7,6 @@ import org.fiddich.api.domain.everytime.dto.Subject;
 import org.fiddich.api.domain.timetable.dto.*;
 import org.fiddich.api.domain.timetable.dto.request.CompareMemberDto;
 import org.fiddich.api.domain.timetable.dto.request.CreateTimetableOptionDto;
-import org.fiddich.api.domain.timetable.dto.request.EditTimetableDto;
 import org.fiddich.api.domain.timetable.dto.request.TimetableIdDto;
 import org.fiddich.api.domain.timetable.dto.response.CompareTimetableDto;
 import org.fiddich.api.domain.timetable.dto.response.YearAndSemesterDto;
@@ -15,7 +14,6 @@ import org.fiddich.api.domain.timetable.helper.TimetableGenerator;
 import org.fiddich.api.domain.timetable.helper.TimetableScorer;
 import org.fiddich.coreinfradomain.domain.Lecture.CustomLecture;
 import org.fiddich.coreinfradomain.domain.Lecture.OfficialLecture;
-import org.fiddich.coreinfradomain.domain.Lecture.repository.LectureRepository;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.domain.Timetable.Timetable;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
@@ -37,7 +35,6 @@ public class TimetableService {
 
     private final TimetableRepository timetableRepository;
     private final MemberRepository memberRepository;
-    private final LectureRepository lectureRepository;
     private final EntityManager em;
 
 
@@ -69,7 +66,7 @@ public class TimetableService {
         }
 
         if(createTimetableDto.isRepresent()) {
-            timetableRepository.clearMainTimetable(member.getId(), createTimetableDto.getYear(), createTimetableDto.getSemester());
+            timetableRepository.resetMainTimetableByMemberId(member.getId(), createTimetableDto.getYear(), createTimetableDto.getSemester());
         }
 
         Timetable timetable = Timetable.builder()
@@ -89,7 +86,7 @@ public class TimetableService {
     // 완료
     public List<YearAndSemesterDto> getYearAndSemester() {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        List<Timetable> timetables = timetableRepository.findByMember(customUserDetails.getId());
+        List<Timetable> timetables = timetableRepository.findByMemberId(customUserDetails.getId());
         return timetables.stream()
                 .map(t -> new YearAndSemesterDto(t.getYear(), t.getSemester()))
                 .distinct()
@@ -99,7 +96,7 @@ public class TimetableService {
     // 완료
     public List<InquiryTimeTableDto> getTimetablesAboutYearAndSemester(String year, String semester) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        List<Timetable> timetables = timetableRepository.findTimetablesWithLecturesByMemberId(customUserDetails.getId(), year, semester);
+        List<Timetable> timetables = timetableRepository.findByMemberIdWithLectures(customUserDetails.getId(), year, semester);
 
         return timetables.stream()
 //                .filter(t -> t.getYear().equals(year) && t.getSemester().equals(semester))
@@ -117,7 +114,7 @@ public class TimetableService {
     // 커스텀은 그냥 저장
     // 공식은 codeSection을 받아서 에타에 조회해서 저장
     public void editTimetable(Long timetableId, List<InternalLectureDto> internalLectureDtos) {
-        Timetable timetable = timetableRepository.findByIdWithTimetableLectures(timetableId)
+        Timetable timetable = timetableRepository.findByIdWithLectures(timetableId)
                 .orElseThrow(() -> new NoSuchElementException("시간표를 찾을 수 없습니다."));
 
         List<OfficialLecture> officialLectures = internalLectureDtos.stream()
@@ -152,7 +149,7 @@ public class TimetableService {
 
     // 완료
     public void deleteTimetable(Long timetableId) {
-        timetableRepository.deleteTimetable(timetableId);
+        timetableRepository.deleteById(timetableId);
     }
 
 
@@ -163,8 +160,8 @@ public class TimetableService {
         Long memberId = customUserDetails.getId();
         Long timetableId = timetableIdDto.getTimetableId();
 
-        timetableRepository.clearMainTimetable(memberId, timetable.getYear(), timetable.getSemester());
-        timetableRepository.updateMainTimetable(timetableId);
+        timetableRepository.resetMainTimetableByMemberId(memberId, timetable.getYear(), timetable.getSemester());
+        timetableRepository.setMainTimetableById(timetableId);
     }
 
     // 자동생성

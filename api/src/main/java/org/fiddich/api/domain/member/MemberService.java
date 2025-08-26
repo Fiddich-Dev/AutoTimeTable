@@ -4,7 +4,6 @@ import jakarta.persistence.EntityManager;
 import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.domain.member.dto.*;
 import org.fiddich.api.domain.timetable.TimetableService;
-import org.fiddich.coreinfradomain.domain.Lecture.repository.LectureRepository;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,7 +29,6 @@ public class MemberService {
     private final MemberRepository memberRepository;
     private final RedisUtil redisUtil;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
-    private final LectureRepository lectureRepository;
     private final TimetableRepository timetableRepository;
     private final EntityManager em;
     private final TimetableService timetableService;
@@ -66,9 +64,9 @@ public class MemberService {
         log.info("탈퇴 요청 PK: {}", id);
         log.info("studentId = {}", studentId);
 
-        List<Timetable> allTimetables = timetableRepository.findAllByMember(customUserDetails.getId());
+        List<Timetable> allTimetables = timetableRepository.findAllByMemberId(customUserDetails.getId());
         for(Timetable timetable : allTimetables) {
-            timetableRepository.deleteTimetable(timetable.getId());
+            timetableRepository.deleteById(timetable.getId());
         }
         memberRepository.deleteById(id);
         // redis에서 studentId + ":refreshToken" 키 삭제

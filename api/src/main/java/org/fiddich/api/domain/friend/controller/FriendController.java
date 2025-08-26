@@ -9,6 +9,7 @@ import org.fiddich.api.domain.friend.dto.SearchMemberDto;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.List;
 
 @Slf4j
@@ -60,7 +61,9 @@ public class FriendController {
 
     @GetMapping("/friends/search")
     public ApiResponse<List<SearchMemberDto>> searchMemberByStudentId(@RequestParam String keyword, @RequestParam int page, @RequestParam int size) {
-        log.info("친구 검색");
+        if (keyword == null || keyword.isEmpty()) {
+            return ApiResponse.onFailure("400", "검색조건 오류");
+        }
         return ApiResponse.onSuccess(friendService.searchMemberByStudentId(keyword, page, size));
     }
 

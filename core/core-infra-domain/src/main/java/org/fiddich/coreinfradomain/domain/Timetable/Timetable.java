@@ -7,7 +7,9 @@ import org.fiddich.coreinfradomain.domain.Lecture.OfficialLecture;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Getter
@@ -27,11 +29,11 @@ public class Timetable {
 
     @Builder.Default
     @OneToMany(mappedBy = "timetable", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OfficialLecture> officialLectures = new ArrayList<>();
+    private Set<OfficialLecture> officialLectures = new HashSet<>();
 
     @Builder.Default
     @OneToMany(mappedBy = "timetable", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<CustomLecture> customLectures = new ArrayList<>();
+    private Set<CustomLecture> customLectures = new HashSet<>();
 
     @Column(name = "year_col")
     private String year;
