@@ -20,7 +20,6 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.NoSuchElementException;
 
-@Slf4j
 @Service
 @Transactional
 @RequiredArgsConstructor
@@ -30,12 +29,10 @@ public class MemberService {
     private final RedisUtil redisUtil;
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final TimetableRepository timetableRepository;
-    private final EntityManager em;
-    private final TimetableService timetableService;
 
     public Long join(JoinDto joinDto) {
 //         학번이 안겹치는지 확인하는 로직
-        if(memberRepository.findByStudentId(joinDto.getStudentId()).isPresent()) {
+        if(memberRepository.existsByStudentId(joinDto.getStudentId())) {
             throw new DuplicateKeyException("이미 존재하는 회원입니다");
         }
 
@@ -50,19 +47,13 @@ public class MemberService {
     }
 
     public boolean isDuplicatedMember(String studentId) {
-        if(memberRepository.findByStudentId(studentId).isPresent()) {
-            return true;
-        }
-        return false;
+        return memberRepository.existsByStudentId(studentId);
     }
 
     public void withdrawal() {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         String studentId = customUserDetails.getStudentId();
         Long id = customUserDetails.getId();
-
-        log.info("탈퇴 요청 PK: {}", id);
-        log.info("studentId = {}", studentId);
 
         List<Timetable> allTimetables = timetableRepository.findAllByMemberId(customUserDetails.getId());
         for(Timetable timetable : allTimetables) {

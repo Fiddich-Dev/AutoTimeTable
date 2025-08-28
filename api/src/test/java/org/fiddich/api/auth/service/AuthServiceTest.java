@@ -8,6 +8,7 @@ import jakarta.transaction.Transactional;
 import org.assertj.core.api.Assertions;
 import org.fiddich.api.QueryCounter;
 import org.fiddich.api.auth.dto.EmailDto;
+import org.fiddich.api.auth.dto.ReissueResponse;
 import org.fiddich.api.domain.member.MemberService;
 import org.fiddich.api.domain.member.dto.JoinDto;
 import org.fiddich.coreinfradomain.domain.Member.Member;
@@ -152,11 +153,11 @@ class AuthServiceTest {
 
         Thread.sleep(1000);
 
-        JWTDto newJwtDto = authService.reissueProcess(jwtDto.getRefresh());
+        ReissueResponse reissueResponse = authService.reissueProcess(jwtDto.getRefresh());
 
         String key = member.getStudentId() + ":refreshToken";
         boolean isExistOldRefresh = redisUtil.findAllValues(key, 0, -1).contains(jwtDto.getRefresh());
-        boolean isExistNewRefresh = redisUtil.findAllValues(key, 0, -1).contains(newJwtDto.getRefresh());
+        boolean isExistNewRefresh = redisUtil.findAllValues(key, 0, -1).contains(reissueResponse.refresh());
 
         Assertions.assertThat(isExistOldRefresh).isFalse();
         Assertions.assertThat(isExistNewRefresh).isTrue();

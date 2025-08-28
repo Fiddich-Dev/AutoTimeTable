@@ -2,7 +2,6 @@ package org.fiddich.api.domain.friend;
 
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.java.Log;
 import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.domain.friend.dto.FriendShipDto;
 import org.fiddich.api.domain.friend.dto.InquiryMemberDto;
@@ -77,7 +76,7 @@ public class FriendService {
         Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
         return me.getPendingFriends().stream().map(InquiryMemberDto::new).toList();
     }
-    
+
     // 친구 검색
     public List<SearchMemberDto> searchMemberByStudentId(String keyword, int page, int size) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
@@ -102,9 +101,13 @@ public class FriendService {
                 .filter(member -> !member.getId().equals(me.getId()))
                 .map(member -> {
                     FriendshipStatus fs = friendStatusMap.get(member.getId());
-                    SearchFriendStatus status = (fs == FriendshipStatus.ACCEPTED) ? SearchFriendStatus.ALREADY_FRIEND
-                            : (fs == FriendshipStatus.PENDING) ? SearchFriendStatus.PENDING
-                            : SearchFriendStatus.NOT_FRIEND;
+                    SearchFriendStatus status = SearchFriendStatus.NOT_FRIEND;
+                    if(fs == FriendshipStatus.ACCEPTED) {
+                        status = SearchFriendStatus.ALREADY_FRIEND;
+                    }
+                    else if(fs == FriendshipStatus.PENDING) {
+                        status = SearchFriendStatus.PENDING;
+                    }
                     return new SearchMemberDto(member, status);
                 })
                 .toList();

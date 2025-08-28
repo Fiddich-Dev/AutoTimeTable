@@ -9,6 +9,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.auth.dto.AuthCodeVerifyDTO;
 import org.fiddich.api.auth.dto.EmailDto;
+import org.fiddich.api.auth.dto.ReissueResponse;
 import org.fiddich.api.auth.service.AuthService;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
 import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;
@@ -25,31 +26,22 @@ public class AuthController {
 
     @GetMapping("/")
     public ResponseEntity<String> healthCheck() {
-        log.info("healthCheck");
         return ResponseEntity.ok("OK");
     }
 
     @PostMapping("/reissue")
-    public ApiResponse<JWTDto> reissue(@RequestHeader("refresh") String refreshToken) {
-        log.info("reissue");
+    public ApiResponse<ReissueResponse> reissue(@RequestHeader("refresh") String refreshToken) {
         return ApiResponse.onSuccess(authService.reissueProcess(refreshToken));
     }
 
     @PostMapping("/mail/send")
     public ApiResponse<Void> sendAuthCode(@RequestBody EmailDto emailDto) {
-        log.info("sendAuthCode");
         authService.sendAuthCode(emailDto);
         return ApiResponse.onSuccess(null);
-//        try {
-//
-//        } catch (Exception e) {
-//            return ApiResponse.onFailure("INVALID_JSON", "요청 형식이 잘못되었습니다.");
-//        }
     }
 
     @PostMapping("/mail/verify")
     public ApiResponse<?> verifyAuthCode(@RequestBody AuthCodeVerifyDTO authCodeVerifyDTO) {
-        log.info("verifyAuthCode()");
         boolean isValid = authService.verifyAuthCode(authCodeVerifyDTO.getEmail(), authCodeVerifyDTO.getAuthCode());
         if(isValid) {
             return ApiResponse.onSuccess(null);

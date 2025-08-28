@@ -38,8 +38,6 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     // 로그인 시도
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
-        log.info("attemptAuthentication()");
-
         //클라이언트 요청에서 studentId, password 추출
         // Java 객체를 JSON 문자열로 변환 (Serialization),
         Map<String, Object> requestBody;
@@ -91,7 +89,7 @@ public class LoginFilter extends UsernamePasswordAuthenticationFilter {
     //로그인 실패시 실행하는 메소드
     @Override
     protected void unsuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response, AuthenticationException failed) throws IOException {
-        log.info("unsuccessfulAuthentication()");
+        log.warn("unsuccessfulAuthentication()");
         HttpResponseUtil.setErrorResponse(response, HttpStatus.UNAUTHORIZED, ApiResponse.onFailure(HttpStatus.UNAUTHORIZED.name(), "아이디 혹은 비밀번호가 일치하지 않습니다"));
     }
 
