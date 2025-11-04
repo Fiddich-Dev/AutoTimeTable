@@ -3,21 +3,17 @@ package org.fiddich.api.auth.service;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
-import jakarta.persistence.EntityManagerFactory;
 import jakarta.transaction.Transactional;
 import org.assertj.core.api.Assertions;
-import org.fiddich.api.QueryCounter;
-import org.fiddich.api.auth.dto.EmailDto;
-import org.fiddich.api.auth.dto.ReissueResponse;
+import org.fiddich.api.auth.dto.request.EmailRequest;
+import org.fiddich.api.auth.dto.response.ReissueResponse;
 import org.fiddich.api.domain.member.MemberService;
-import org.fiddich.api.domain.member.dto.JoinDto;
+import org.fiddich.api.domain.member.dto.request.SignUpRequest;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
 import org.fiddich.coreinfraredis.util.RedisUtil;
 import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;
 import org.fiddich.coreinfrasecurity.user.CustomUserDetails;
-import org.hibernate.SessionFactory;
-import org.hibernate.stat.Statistics;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -95,8 +91,8 @@ class AuthServiceTest {
 
     // 나 회원가입
     public Long join() {
-        JoinDto joinDto = new JoinDto("내학번", "내비밀번호", "내이름");
-        Long id = memberService.join(joinDto);
+        SignUpRequest signUpRequest = new SignUpRequest("내학번", "내비밀번호", "내이름");
+        Long id = memberService.join(signUpRequest);
         return id;
     }
 
@@ -166,9 +162,9 @@ class AuthServiceTest {
     }
 
     @Test
-    void 인증번호보내고확인() {
+    void 인증번호보내고확인() throws Exception {
         String email = "hiws99@naver.com";
-        String authCode = authService.sendAuthCode(new EmailDto(email));
+        String authCode = authService.sendAuthCode(new EmailRequest(email));
         boolean isExist = redisUtil.getValue(email).equals(authCode);
         Assertions.assertThat(authService.verifyAuthCode(email, authCode)).isTrue();
         Assertions.assertThat(isExist).isTrue();

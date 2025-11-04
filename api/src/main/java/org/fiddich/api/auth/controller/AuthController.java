@@ -1,23 +1,14 @@
 package org.fiddich.api.auth.controller;
 
-
-import io.swagger.v3.oas.annotations.Operation;
-import io.swagger.v3.oas.annotations.media.Content;
-import io.swagger.v3.oas.annotations.media.Schema;
-import io.swagger.v3.oas.annotations.responses.ApiResponses;
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.fiddich.api.auth.dto.AuthCodeVerifyDTO;
-import org.fiddich.api.auth.dto.EmailDto;
-import org.fiddich.api.auth.dto.ReissueResponse;
+import org.fiddich.api.auth.dto.request.VerifyAuthCodeRequest;
+import org.fiddich.api.auth.dto.request.EmailRequest;
+import org.fiddich.api.auth.dto.response.ReissueResponse;
 import org.fiddich.api.auth.service.AuthService;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
-import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
-@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class AuthController {
@@ -35,22 +26,19 @@ public class AuthController {
     }
 
     @PostMapping("/mail/send")
-    public ApiResponse<Void> sendAuthCode(@RequestBody EmailDto emailDto) {
-        authService.sendAuthCode(emailDto);
+    public ApiResponse<Void> sendAuthCode(@RequestBody EmailRequest emailRequest) throws Exception {
+        authService.sendAuthCode(emailRequest);
         return ApiResponse.onSuccess(null);
     }
 
     @PostMapping("/mail/verify")
-    public ApiResponse<?> verifyAuthCode(@RequestBody AuthCodeVerifyDTO authCodeVerifyDTO) {
-        boolean isValid = authService.verifyAuthCode(authCodeVerifyDTO.getEmail(), authCodeVerifyDTO.getAuthCode());
-        if(isValid) {
+    public ApiResponse<Void> verifyAuthCode(@RequestBody VerifyAuthCodeRequest verifyAuthCodeRequest) {
+        boolean isValid = authService.verifyAuthCode(verifyAuthCodeRequest.getEmail(), verifyAuthCodeRequest.getAuthCode());
+        if (isValid) {
             return ApiResponse.onSuccess(null);
-        }
-        else {
+        } else {
             return ApiResponse.onFailure("CONFLICT", "인증실패");
         }
     }
-
-
 
 }

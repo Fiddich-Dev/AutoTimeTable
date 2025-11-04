@@ -7,25 +7,19 @@ import jakarta.transaction.Transactional;
 import org.assertj.core.api.Assertions;
 import org.fiddich.api.domain.everytime.EverytimeUtil;
 import org.fiddich.api.domain.member.MemberService;
-import org.fiddich.api.domain.member.dto.JoinDto;
+import org.fiddich.api.domain.member.dto.request.SignUpRequest;
 import org.fiddich.api.domain.timetable.dto.*;
 
-import org.fiddich.api.domain.timetable.dto.request.CompareMemberDto;
-import org.fiddich.api.domain.timetable.dto.request.TimetableIdDto;
+import org.fiddich.api.domain.timetable.dto.request.CompareTimetableRequest;
+import org.fiddich.api.domain.timetable.dto.request.TimetableIdRequest;
 import org.fiddich.api.domain.timetable.dto.response.CompareTimetableDto;
-import org.fiddich.coreinfradomain.domain.Lecture.Lecture;
-import org.fiddich.coreinfradomain.domain.Lecture.LectureTime;
-import org.fiddich.coreinfradomain.domain.Lecture.OfficialLecture;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
-import org.fiddich.coreinfradomain.domain.Timetable.Timetable;
 import org.fiddich.coreinfradomain.domain.Timetable.repository.TimetableRepository;
-import org.fiddich.coreinfraredis.util.RedisUtil;
 import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;
 import org.fiddich.coreinfrasecurity.user.CustomUserDetails;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -35,30 +29,14 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 
-import org.jsoup.Jsoup;
-import org.jsoup.nodes.Document;
-import java.nio.charset.StandardCharsets;
-
 import org.springframework.test.web.servlet.MvcResult;
-import org.xml.sax.SAXException;
 
-import javax.xml.parsers.DocumentBuilder;
-import javax.xml.parsers.DocumentBuilderFactory;
-import javax.xml.parsers.ParserConfigurationException;
-import java.io.ByteArrayInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
-import java.sql.SQLOutput;
 import java.util.*;
-import java.util.stream.Collectors;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -143,8 +121,8 @@ class TimetableServiceTest {
 
     // 나 회원가입
     public Long join() {
-        JoinDto joinDto = new JoinDto("내학번", "내비밀번호", "내이름");
-        Long id = memberService.join(joinDto);
+        SignUpRequest signUpRequest = new SignUpRequest("내학번", "내비밀번호", "내이름");
+        Long id = memberService.join(signUpRequest);
         return id;
     }
 
@@ -336,7 +314,7 @@ class TimetableServiceTest {
         Long timetableId2 = timetableService.save(createTimetableDto2);
 
         // when
-        timetableService.changeMainTimetable(new TimetableIdDto(timetableId2));
+        timetableService.changeMainTimetable(new TimetableIdRequest(timetableId2));
         em.flush();
         em.clear();
 
@@ -369,8 +347,8 @@ class TimetableServiceTest {
         Long myTimetableId = timetableService.save(new CreateTimetableDto(nowYear, nowSemester, "테스트2", true, mySaveLectures));
 
         // when
-        CompareMemberDto compareMemberDto = new CompareMemberDto(nowYear, nowSemester, List.of(friendId));
-        List<CompareTimetableDto> compareTimetableDtos = timetableService.compareTimetable(compareMemberDto);
+        CompareTimetableRequest compareTimetableRequest = new CompareTimetableRequest(nowYear, nowSemester, List.of(friendId));
+        List<CompareTimetableDto> compareTimetableDtos = timetableService.compareTimetable(compareTimetableRequest);
         em.flush();
         em.clear();
 
@@ -425,8 +403,8 @@ class TimetableServiceTest {
         // when
         List<Long> friendIds = new ArrayList<>();
         friendIds.add(friendId);
-        CompareMemberDto compareMemberDto = new CompareMemberDto(nowYear, nowSemester, friendIds);
-        List<InternalLectureDto> allLectures = timetableService.compareFreeTime(compareMemberDto);
+        CompareTimetableRequest compareTimetableRequest = new CompareTimetableRequest(nowYear, nowSemester, friendIds);
+        List<InternalLectureDto> allLectures = timetableService.compareFreeTime(compareTimetableRequest);
         em.flush();
         em.clear();
 

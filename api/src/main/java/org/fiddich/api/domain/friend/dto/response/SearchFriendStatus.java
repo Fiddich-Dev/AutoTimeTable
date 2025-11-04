@@ -1,4 +1,4 @@
-package org.fiddich.api.domain.friend.dto;
+package org.fiddich.api.domain.friend.dto.response;
 
 public enum SearchFriendStatus {
     ALREADY_FRIEND, // 이미 친구

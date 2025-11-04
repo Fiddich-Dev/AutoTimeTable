@@ -6,9 +6,9 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.assertj.core.api.Assertions;
 import org.fiddich.api.domain.friend.FriendService;
-import org.fiddich.api.domain.member.dto.JoinDto;
-import org.fiddich.api.domain.member.dto.PasswordDto;
-import org.fiddich.api.domain.member.dto.ResetPasswordDto;
+import org.fiddich.api.domain.member.dto.request.SignUpRequest;
+import org.fiddich.api.domain.member.dto.request.PasswordRequest;
+import org.fiddich.api.domain.member.dto.request.PasswordResetRequest;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
 import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;
@@ -17,8 +17,6 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -37,7 +35,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -96,8 +93,8 @@ class MemberServiceTest {
 
     // 나 회원가입
     public Long join() {
-        JoinDto joinDto = new JoinDto("내학번", "내비밀번호", "내이름");
-        Long id = memberService.join(joinDto);
+        SignUpRequest signUpRequest = new SignUpRequest("내학번", "내비밀번호", "내이름");
+        Long id = memberService.join(signUpRequest);
         return id;
     }
 
@@ -181,8 +178,8 @@ class MemberServiceTest {
 
         // when
         String newPassword = "new-password";
-        ResetPasswordDto resetPasswordDto = new ResetPasswordDto(me.getStudentId(), newPassword);
-        memberService.resetPassword(resetPasswordDto);
+        PasswordResetRequest passwordResetRequest = new PasswordResetRequest(me.getStudentId(), newPassword);
+        memberService.resetPassword(passwordResetRequest);
 
         // then
         String requestBody = """
@@ -209,16 +206,15 @@ class MemberServiceTest {
         saveUserDetails(myId);
 
         // when
-        PasswordDto passwordDto = new PasswordDto();
-        passwordDto.setPassword("틀린비밀번호");
+        PasswordRequest passwordRequest = new PasswordRequest("틀린비밀번호");
         Assertions.assertThatThrownBy(() -> {
             throw new IllegalArgumentException();
         });
 
-        passwordDto.setPassword("내비밀번호");
-        memberService.validPassword(passwordDto);
-        passwordDto.setPassword("새비밀번호");
-        memberService.changePassword(passwordDto);
+        passwordRequest = new PasswordRequest("내비밀번호");
+        memberService.validPassword(passwordRequest);
+        passwordRequest = new PasswordRequest("새비밀번호");
+        memberService.changePassword(passwordRequest);
 
         em.flush();
         em.clear();

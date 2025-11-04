@@ -1,9 +1,8 @@
 package org.fiddich.api.domain.member;
 
-import jakarta.persistence.EntityManager;
-import lombok.extern.slf4j.Slf4j;
-import org.fiddich.api.domain.member.dto.*;
-import org.fiddich.api.domain.timetable.TimetableService;
+import org.fiddich.api.domain.member.dto.request.PasswordRequest;
+import org.fiddich.api.domain.member.dto.request.PasswordResetRequest;
+import org.fiddich.api.domain.member.dto.request.SignUpRequest;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
 import lombok.RequiredArgsConstructor;
@@ -30,16 +29,16 @@ public class MemberService {
     private final BCryptPasswordEncoder bCryptPasswordEncoder;
     private final TimetableRepository timetableRepository;
 
-    public Long join(JoinDto joinDto) {
+    public Long join(SignUpRequest signUpRequest) {
 //         학번이 안겹치는지 확인하는 로직
-        if(memberRepository.existsByStudentId(joinDto.getStudentId())) {
+        if(memberRepository.existsByStudentId(signUpRequest.studentId())) {
             throw new DuplicateKeyException("이미 존재하는 회원입니다");
         }
 
         Member member = Member.builder()
-                .studentId(joinDto.getStudentId())
-                .password(bCryptPasswordEncoder.encode(joinDto.getPassword()))
-                        .username(joinDto.getUsername())
+                .studentId(signUpRequest.studentId())
+                .password(bCryptPasswordEncoder.encode(signUpRequest.password()))
+                        .username(signUpRequest.username())
                                                 .build();
 
         memberRepository.save(member);
@@ -64,26 +63,26 @@ public class MemberService {
         redisUtil.deleteKey(studentId + ":refreshToken");
     }
 
-    public void resetPassword(ResetPasswordDto resetPasswordDto) {
-        Member me = memberRepository.findByStudentId(resetPasswordDto.getStudentId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
-        String encodedPassword = bCryptPasswordEncoder.encode(resetPasswordDto.getNewPassword());
+    public void resetPassword(PasswordResetRequest passwordResetRequest) {
+        Member me = memberRepository.findByStudentId(passwordResetRequest.studentId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        String encodedPassword = bCryptPasswordEncoder.encode(passwordResetRequest.newPassword());
         me.changePassword(encodedPassword);
     }
 
-    public void validPassword(PasswordDto passwordDto) {
+    public void validPassword(PasswordRequest passwordRequest) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
-        String nowPassword = passwordDto.getPassword();
+        String nowPassword = passwordRequest.password();
         boolean isMatch = bCryptPasswordEncoder.matches(nowPassword, me.getPassword());
         if (!isMatch) {
             throw new IllegalArgumentException("현재 비밀번호가 올바르지 않습니다.");
         }
     }
 
-    public void changePassword(PasswordDto passwordDto) {
+    public void changePassword(PasswordRequest passwordRequest) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
-        String newPassword = passwordDto.getPassword();
+        String newPassword = passwordRequest.password();
         String encodedPassword = bCryptPasswordEncoder.encode(newPassword);
         me.changePassword(encodedPassword);
     }

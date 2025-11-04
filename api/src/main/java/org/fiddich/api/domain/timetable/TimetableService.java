@@ -5,11 +5,11 @@ import jakarta.persistence.EntityManager;
 import org.fiddich.api.domain.everytime.EverytimeRequester;
 import org.fiddich.api.domain.everytime.dto.Subject;
 import org.fiddich.api.domain.timetable.dto.*;
-import org.fiddich.api.domain.timetable.dto.request.CompareMemberDto;
+import org.fiddich.api.domain.timetable.dto.request.CompareTimetableRequest;
 import org.fiddich.api.domain.timetable.dto.request.CreateTimetableOptionDto;
-import org.fiddich.api.domain.timetable.dto.request.TimetableIdDto;
+import org.fiddich.api.domain.timetable.dto.request.TimetableIdRequest;
 import org.fiddich.api.domain.timetable.dto.response.CompareTimetableDto;
-import org.fiddich.api.domain.timetable.dto.response.YearAndSemesterDto;
+import org.fiddich.api.domain.timetable.dto.response.YearAndSemesterResponse;
 import org.fiddich.api.domain.timetable.helper.TimetableGenerator;
 import org.fiddich.api.domain.timetable.helper.TimetableScorer;
 import org.fiddich.coreinfradomain.domain.Lecture.CustomLecture;
@@ -84,11 +84,11 @@ public class TimetableService {
     }
 
     // 완료
-    public List<YearAndSemesterDto> getYearAndSemester() {
+    public List<YearAndSemesterResponse> getYearAndSemester() {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         List<Timetable> timetables = timetableRepository.findByMemberId(customUserDetails.getId());
         return timetables.stream()
-                .map(t -> new YearAndSemesterDto(t.getYear(), t.getSemester()))
+                .map(t -> new YearAndSemesterResponse(t.getYear(), t.getSemester()))
                 .distinct()
                 .toList();
     }
@@ -154,11 +154,11 @@ public class TimetableService {
 
 
     // 완료
-    public void changeMainTimetable(TimetableIdDto timetableIdDto) {
+    public void changeMainTimetable(TimetableIdRequest timetableIdRequest) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        Timetable timetable = timetableRepository.findById(timetableIdDto.getTimetableId()).orElseThrow(() -> new NoSuchElementException("시간표가 없습니다."));
+        Timetable timetable = timetableRepository.findById(timetableIdRequest.timetableId()).orElseThrow(() -> new NoSuchElementException("시간표가 없습니다."));
         Long memberId = customUserDetails.getId();
-        Long timetableId = timetableIdDto.getTimetableId();
+        Long timetableId = timetableIdRequest.timetableId();
 
         timetableRepository.resetMainTimetableByMemberId(memberId, timetable.getYear(), timetable.getSemester());
         timetableRepository.setMainTimetableById(timetableId);
@@ -241,11 +241,11 @@ public class TimetableService {
 
     // 겹치는 강의에 회원정보 추가
     // 커스텀은 겹칠수가 없음
-    public List<CompareTimetableDto> compareTimetable(CompareMemberDto compareMemberDto) {
+    public List<CompareTimetableDto> compareTimetable(CompareTimetableRequest compareTimetableRequest) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Long myId = customUserDetails.getId();
-        String year = compareMemberDto.getYear();
-        String semester = compareMemberDto.getSemester();
+        String year = compareTimetableRequest.year();
+        String semester = compareTimetableRequest.semester();
 
         // 내 메인 시간표에서 강의 목록 조회
         Timetable myMainTimetable = timetableRepository.findMainByMemberIdWithLectures(myId, year, semester)
@@ -267,7 +267,7 @@ public class TimetableService {
         // 결과 저장용 Map: 강의 ID → CompareTimetableDto
         Map<String, CompareTimetableDto> lectureDtoMap = new HashMap<>();
 
-        for (Long memberId : compareMemberDto.getMemberIds()) {
+        for (Long memberId : compareTimetableRequest.memberIds()) {
             Member friend = memberRepository.findById(memberId)
                     .orElseThrow(() -> new NoSuchElementException("회원이 없습니다."));
             Timetable friendMainTimetable = timetableRepository.findMainByMemberIdWithLectures(friend.getId(), year, semester)
@@ -324,17 +324,17 @@ public class TimetableService {
 
     // 모든 강의 중복있게 가져오기
     // 커스텀강의의 시간이 중복으로 가져와짐
-    public List<InternalLectureDto> compareFreeTime(CompareMemberDto compareMemberDto) {
+    public List<InternalLectureDto> compareFreeTime(CompareTimetableRequest compareTimetableRequest) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        String year = compareMemberDto.getYear();
-        String semester = compareMemberDto.getSemester();
+        String year = compareTimetableRequest.year();
+        String semester = compareTimetableRequest.semester();
 
         List<InternalLectureDto> result = new ArrayList<>();
 
         // 나도 포함
-        compareMemberDto.getMemberIds().add(customUserDetails.getId());
+        compareTimetableRequest.memberIds().add(customUserDetails.getId());
 
-        for (Long memberId : compareMemberDto.getMemberIds()) {
+        for (Long memberId : compareTimetableRequest.memberIds()) {
 
             Timetable timetable = timetableRepository.findMainByMemberIdWithLectures(memberId, year, semester).orElse(null);
 

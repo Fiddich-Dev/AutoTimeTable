@@ -5,16 +5,14 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.assertj.core.api.Assertions;
-import org.fiddich.api.auth.service.AuthService;
-import org.fiddich.api.domain.friend.dto.FriendShipDto;
-import org.fiddich.api.domain.friend.dto.InquiryMemberDto;
-import org.fiddich.api.domain.friend.dto.SearchFriendStatus;
-import org.fiddich.api.domain.friend.dto.SearchMemberDto;
+import org.fiddich.api.domain.friend.dto.request.FriendShipRequest;
+import org.fiddich.api.domain.friend.dto.response.MemberInfoResponse;
+import org.fiddich.api.domain.friend.dto.response.SearchFriendStatus;
+import org.fiddich.api.domain.friend.dto.response.SearchMemberResponse;
 import org.fiddich.api.domain.member.MemberService;
-import org.fiddich.api.domain.member.dto.JoinDto;
+import org.fiddich.api.domain.member.dto.request.SignUpRequest;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
-import org.fiddich.coreinfraredis.util.RedisUtil;
 import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;
 import org.fiddich.coreinfrasecurity.user.CustomUserDetails;
 import org.junit.jupiter.api.AfterEach;
@@ -35,13 +33,11 @@ import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
-import org.springframework.util.Assert;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.multipart;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -101,8 +97,8 @@ class FriendServiceTest {
 
     // 나 회원가입
     public Long join() {
-        JoinDto joinDto = new JoinDto("내학번", "내비밀번호", "내이름");
-        Long id = memberService.join(joinDto);
+        SignUpRequest signUpRequest = new SignUpRequest("내학번", "내비밀번호", "내이름");
+        Long id = memberService.join(signUpRequest);
         return id;
     }
 
@@ -157,13 +153,13 @@ class FriendServiceTest {
 
         // when
         Long friendId = ids.get(0);
-        FriendShipDto friendShipDto = new FriendShipDto(friendId);
-        friendService.sendFriendRequest(friendShipDto);
+        FriendShipRequest friendShipRequest = new FriendShipRequest(friendId);
+        friendService.sendFriendRequest(friendShipRequest);
 
         // then
         SecurityContextHolder.clearContext();
         saveUserDetails(friendId);
-        List<InquiryMemberDto> pendingFriends = friendService.findPendingResponse();
+        List<MemberInfoResponse> pendingFriends = friendService.findPendingResponse();
         Assertions.assertThat(pendingFriends.size()).isEqualTo(1);
     }
 
@@ -176,20 +172,20 @@ class FriendServiceTest {
         saveUserDetails(myId);
 
         Long friendId = ids.get(0);
-        FriendShipDto friendShipDto = new FriendShipDto(friendId);
-        friendService.sendFriendRequest(friendShipDto);
+        FriendShipRequest friendShipRequest = new FriendShipRequest(friendId);
+        friendService.sendFriendRequest(friendShipRequest);
 
         // when
         SecurityContextHolder.clearContext();
         saveUserDetails(ids.get(0));
-        friendService.acceptFriendRequest(new FriendShipDto(myId));
+        friendService.acceptFriendRequest(new FriendShipRequest(myId));
 
         // then
-        List<InquiryMemberDto> friendFriends =  friendService.findAllFriends();
+        List<MemberInfoResponse> friendFriends =  friendService.findAllFriends();
         Assertions.assertThat(friendFriends.size()).isEqualTo(1);
         SecurityContextHolder.clearContext();
         saveUserDetails(myId);
-        List<InquiryMemberDto> myFriends =  friendService.findAllFriends();
+        List<MemberInfoResponse> myFriends =  friendService.findAllFriends();
         Assertions.assertThat(myFriends.size()).isEqualTo(1);
     }
 
@@ -202,8 +198,8 @@ class FriendServiceTest {
         saveUserDetails(myId);
 
         Long friendId = ids.get(0);
-        FriendShipDto friendShipDto = new FriendShipDto(friendId);
-        friendService.sendFriendRequest(friendShipDto);
+        FriendShipRequest friendShipRequest = new FriendShipRequest(friendId);
+        friendService.sendFriendRequest(friendShipRequest);
 
         // when
         SecurityContextHolder.clearContext();
@@ -211,11 +207,11 @@ class FriendServiceTest {
         friendService.rejectFriendRequest(myId);
 
         // then
-        List<InquiryMemberDto> friendPendingFriends =  friendService.findPendingResponse();
+        List<MemberInfoResponse> friendPendingFriends =  friendService.findPendingResponse();
         Assertions.assertThat(friendPendingFriends.size()).isEqualTo(0);
         SecurityContextHolder.clearContext();
         saveUserDetails(myId);
-        List<InquiryMemberDto> myPendingFriends =  friendService.findPendingResponse();
+        List<MemberInfoResponse> myPendingFriends =  friendService.findPendingResponse();
         Assertions.assertThat(myPendingFriends.size()).isEqualTo(0);
     }
 
@@ -228,22 +224,22 @@ class FriendServiceTest {
         saveUserDetails(myId);
 
         Long friendId = ids.get(0);
-        FriendShipDto friendShipDto = new FriendShipDto(friendId);
-        friendService.sendFriendRequest(friendShipDto);
+        FriendShipRequest friendShipRequest = new FriendShipRequest(friendId);
+        friendService.sendFriendRequest(friendShipRequest);
 
         SecurityContextHolder.clearContext();
         saveUserDetails(ids.get(0));
-        friendService.acceptFriendRequest(new FriendShipDto(myId));
+        friendService.acceptFriendRequest(new FriendShipRequest(myId));
 
         // when
         friendService.deleteFriend(myId);
 
         // then
-        List<InquiryMemberDto> friendFriends =  friendService.findAllFriends();
+        List<MemberInfoResponse> friendFriends =  friendService.findAllFriends();
         Assertions.assertThat(friendFriends.size()).isEqualTo(0);
         SecurityContextHolder.clearContext();
         saveUserDetails(myId);
-        List<InquiryMemberDto> myFriends =  friendService.findAllFriends();
+        List<MemberInfoResponse> myFriends =  friendService.findAllFriends();
         Assertions.assertThat(myFriends.size()).isEqualTo(0);
     }
 
@@ -257,42 +253,42 @@ class FriendServiceTest {
 
         // 보류중인 친구
         Long friendId = ids.get(0);
-        FriendShipDto friendShipDto = new FriendShipDto(friendId);
-        friendService.sendFriendRequest(friendShipDto);
+        FriendShipRequest friendShipRequest = new FriendShipRequest(friendId);
+        friendService.sendFriendRequest(friendShipRequest);
 
         // 수락된 친구
         Long friendId1 = ids.get(1);
-        FriendShipDto friendShipDto1 = new FriendShipDto(friendId1);
-        friendService.sendFriendRequest(friendShipDto1);
+        FriendShipRequest friendShipRequest1 = new FriendShipRequest(friendId1);
+        friendService.sendFriendRequest(friendShipRequest1);
         SecurityContextHolder.clearContext();
         saveUserDetails(friendId1);
-        friendService.acceptFriendRequest(new FriendShipDto(myId));
+        friendService.acceptFriendRequest(new FriendShipRequest(myId));
         em.flush();
         em.clear();
 
         // when
         SecurityContextHolder.clearContext();
         saveUserDetails(myId);
-        List<SearchMemberDto> searchMemberDtos = friendService.searchMemberByStudentId("test", 0, 3);
+        List<SearchMemberResponse> searchMemberResponses = friendService.searchMemberByStudentId("test", 0, 3);
 
-        Assertions.assertThat(searchMemberDtos.size()).isEqualTo(3);
-        searchMemberDtos = friendService.searchMemberByStudentId("test", 0, 10);
+        Assertions.assertThat(searchMemberResponses.size()).isEqualTo(3);
+        searchMemberResponses = friendService.searchMemberByStudentId("test", 0, 10);
 
         // then
-        Assertions.assertThat(searchMemberDtos.size()).isEqualTo(ids.size());
+        Assertions.assertThat(searchMemberResponses.size()).isEqualTo(ids.size());
 
-        List<SearchMemberDto> pendingFriends = searchMemberDtos.stream()
-                .filter(s -> s.getStatus() == SearchFriendStatus.PENDING)
+        List<SearchMemberResponse> pendingFriends = searchMemberResponses.stream()
+                .filter(s -> s.status() == SearchFriendStatus.PENDING)
                 .toList();
         Assertions.assertThat(pendingFriends.size()).isEqualTo(1);
 
-        List<SearchMemberDto> acceptedFriends = searchMemberDtos.stream()
-                .filter(s -> s.getStatus() == SearchFriendStatus.ALREADY_FRIEND)
+        List<SearchMemberResponse> acceptedFriends = searchMemberResponses.stream()
+                .filter(s -> s.status() == SearchFriendStatus.ALREADY_FRIEND)
                 .toList();
         Assertions.assertThat(acceptedFriends.size()).isEqualTo(1);
 
-        List<SearchMemberDto> notFriends = searchMemberDtos.stream()
-                .filter(s -> s.getStatus() == SearchFriendStatus.NOT_FRIEND)
+        List<SearchMemberResponse> notFriends = searchMemberResponses.stream()
+                .filter(s -> s.status() == SearchFriendStatus.NOT_FRIEND)
                 .toList();
         Assertions.assertThat(notFriends.size()).isEqualTo(ids.size() - pendingFriends.size() - acceptedFriends.size());
     }

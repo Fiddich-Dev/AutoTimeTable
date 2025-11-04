@@ -1,11 +1,10 @@
-package org.fiddich.api.auth.dto;
+package org.fiddich.api.auth.dto.request;
 
 import lombok.AllArgsConstructor;
 import lombok.Data;
-import lombok.Getter;
 
 @Data
 @AllArgsConstructor
-public class EmailDto {
+public class EmailRequest {
     private String email;
 }

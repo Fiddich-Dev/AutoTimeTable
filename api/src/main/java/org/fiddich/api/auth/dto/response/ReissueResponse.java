@@ -1,4 +1,4 @@
-package org.fiddich.api.auth.dto;
+package org.fiddich.api.auth.dto.response;
 
 import lombok.Builder;
 import org.fiddich.coreinfrasecurity.jwt.dto.JWTDto;

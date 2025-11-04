@@ -3,10 +3,10 @@ package org.fiddich.api.domain.friend;
 import jakarta.transaction.Transactional;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.fiddich.api.domain.friend.dto.FriendShipDto;
-import org.fiddich.api.domain.friend.dto.InquiryMemberDto;
-import org.fiddich.api.domain.friend.dto.SearchFriendStatus;
-import org.fiddich.api.domain.friend.dto.SearchMemberDto;
+import org.fiddich.api.domain.friend.dto.request.FriendShipRequest;
+import org.fiddich.api.domain.friend.dto.response.MemberInfoResponse;
+import org.fiddich.api.domain.friend.dto.response.SearchFriendStatus;
+import org.fiddich.api.domain.friend.dto.response.SearchMemberResponse;
 import org.fiddich.coreinfradomain.domain.Member.Member;
 import org.fiddich.coreinfradomain.domain.Member.repository.MemberRepository;
 import org.fiddich.coreinfradomain.domain.friendship.Friendship;
@@ -32,18 +32,18 @@ public class FriendService {
     private final FriendshipRepository friendshipRepository;
 
     // 친구 요청 보내기
-    public void sendFriendRequest(FriendShipDto requestFriendshipDto) {
+    public void sendFriendRequest(FriendShipRequest requestFriendshipRequest) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
-        Member receiver = memberRepository.findById(requestFriendshipDto.getMemberId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        Member receiver = memberRepository.findById(requestFriendshipRequest.memberId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
         me.requestFriendship(receiver);
     }
 
     // 친구요청 수락
-    public void acceptFriendRequest(FriendShipDto receiveFriendshipDto) {
+    public void acceptFriendRequest(FriendShipRequest receiveFriendshipRequest) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
-        Member requester = memberRepository.findById(receiveFriendshipDto.getMemberId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
+        Member requester = memberRepository.findById(receiveFriendshipRequest.memberId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
         me.acceptFriendship(requester);
     }
 
@@ -64,21 +64,21 @@ public class FriendService {
     }
 
     // 내 친구들 조회
-    public List<InquiryMemberDto> findAllFriends() {
+    public List<MemberInfoResponse> findAllFriends() {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
-        return me.getFriends().stream().map(InquiryMemberDto::new).toList();
+        return me.getFriends().stream().map(MemberInfoResponse::from).toList();
     }
 
     // 받은 요청중 보류중인거
-    public List<InquiryMemberDto> findPendingResponse() {
+    public List<MemberInfoResponse> findPendingResponse() {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
-        return me.getPendingFriends().stream().map(InquiryMemberDto::new).toList();
+        return me.getPendingFriends().stream().map(MemberInfoResponse::from).toList();
     }
 
     // 친구 검색
-    public List<SearchMemberDto> searchMemberByStudentId(String keyword, int page, int size) {
+    public List<SearchMemberResponse> searchMemberByStudentId(String keyword, int page, int size) {
         CustomUserDetails customUserDetails = (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         Member me = memberRepository.findById(customUserDetails.getId()).orElseThrow(() -> new NoSuchElementException("해당 회원이 존재하지 않습니다."));
 
@@ -108,7 +108,7 @@ public class FriendService {
                     else if(fs == FriendshipStatus.PENDING) {
                         status = SearchFriendStatus.PENDING;
                     }
-                    return new SearchMemberDto(member, status);
+                    return SearchMemberResponse.from(member, status);
                 })
                 .toList();
     }

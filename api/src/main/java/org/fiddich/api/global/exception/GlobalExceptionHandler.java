@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.util.NoSuchElementException;
+import java.util.Objects;
 
 @Slf4j
 @RestControllerAdvice
@@ -26,6 +27,13 @@ public class GlobalExceptionHandler {
         log.warn(">>>>> NoSuchElementException Error : ", e);
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED.value()).body(ApiResponse.onFailure(HttpStatus.UNAUTHORIZED.name(), e.getMessage()));
     }
+
+//    @ExceptionHandler(AuthException.class)
+//    public ApiResponse<Objects> handleAuthException(AuthException e) {
+//        log.warn(">>>>> AuthException Error : {}", e.getMessage());
+//
+//        return ApiResponse.onFailure()
+//    }
 
 
 }

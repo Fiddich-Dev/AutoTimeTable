@@ -11,5 +11,4 @@ public class CompareTimetableDto {
     InternalLectureDto internalLectureDto;
     List<String> usernames = new ArrayList<>();
     List<String> studentIds = new ArrayList<>();
-
 }

@@ -1,22 +1,18 @@
 package org.fiddich.api.domain.timetable.controller;
 
-
 import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.domain.timetable.dto.*;
 import org.fiddich.api.domain.timetable.TimetableService;
-import org.fiddich.api.domain.timetable.dto.request.CompareMemberDto;
+import org.fiddich.api.domain.timetable.dto.request.CompareTimetableRequest;
 import org.fiddich.api.domain.timetable.dto.request.CreateTimetableOptionDto;
-import org.fiddich.api.domain.timetable.dto.request.EditTimetableDto;
-import org.fiddich.api.domain.timetable.dto.request.TimetableIdDto;
+import org.fiddich.api.domain.timetable.dto.request.TimetableIdRequest;
 import org.fiddich.api.domain.timetable.dto.response.CompareTimetableDto;
-import org.fiddich.api.domain.timetable.dto.response.YearAndSemesterDto;
+import org.fiddich.api.domain.timetable.dto.response.YearAndSemesterResponse;
 import org.fiddich.coreinfradomain.domain.common.ApiResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
-@Slf4j
 @RestController
 @RequiredArgsConstructor
 public class TimetableController {
@@ -25,25 +21,21 @@ public class TimetableController {
 
     @PostMapping("/timetables")
     public ApiResponse<Long> saveTimetable(@RequestBody CreateTimetableDto createTimetableDto) {
-        log.info("시간표 저장: {}", createTimetableDto);
         return ApiResponse.onSuccess(timetableService.save(createTimetableDto));
     }
 
     @GetMapping("/timetables")
     public ApiResponse<List<InquiryTimeTableDto>> getTimetablesWithLectures(@RequestParam String year, @RequestParam String semester) {
-        log.info("학년도의 시간표 조회 year = {}, semester = {}", year, semester);
         return ApiResponse.onSuccess(timetableService.getTimetablesAboutYearAndSemester(year, semester));
     }
 
     @GetMapping("/timetables/periods")
-    public ApiResponse<List<YearAndSemesterDto>> getYearAndSemester() {
-        log.info("존재하는 학년도 조회");
+    public ApiResponse<List<YearAndSemesterResponse>> getYearAndSemester() {
         return ApiResponse.onSuccess(timetableService.getYearAndSemester());
     }
 
     @GetMapping("/timetables/main")
     public ApiResponse<InquiryTimeTableDto> getMainTimetablesWithLectures(@RequestParam String year, @RequestParam String semester) {
-        log.info("메인시간표 조회 year = {}, semester = {}", year, semester);
         InquiryTimeTableDto mainTimetable = timetableService.getMainTimetableWithLectures(year, semester);
         if(mainTimetable != null) {
             return ApiResponse.onSuccess(mainTimetable);
@@ -53,64 +45,38 @@ public class TimetableController {
         }
     }
 
-//    @PostMapping("/timetables/everytime")
-//    public ApiResponse<Void> saveEveryTimetable(@RequestBody CreateTimetableDto createTimetableDto) {
-//        log.info("에타 시간표 저장: {]", createTimetableDto);
-//        everytimeService.createTimetableWithExternalLectures(createTimetableWithExternalLecturesDto);
-//        return ApiResponse.onSuccess(null);
-//    }
-
-    // 변경
     @PutMapping("/timetables/{timetableId}")
     public ApiResponse<Void> editTimetable(@PathVariable Long timetableId, @RequestBody List<InternalLectureDto> internalLectureDtos) {
-        log.info("{}번 시간표 대체: {}", timetableId, internalLectureDtos);
         timetableService.editTimetable(timetableId, internalLectureDtos);
         return ApiResponse.onSuccess(null);
     }
 
     @DeleteMapping("/timetables/{timetableId}")
     public ApiResponse<Void> deleteTimetable(@PathVariable Long timetableId) {
-        log.info("{}번 시간표 삭제", timetableId);
         timetableService.deleteTimetable(timetableId);
         return ApiResponse.onSuccess(null);
     }
 
     @PostMapping("/timetables/auto-generate")
     public ApiResponse<List<List<InternalLectureDto>>> createTimetable(@RequestBody CreateTimetableOptionDto optionDto) {
-        log.info("시간표 생성, 옵션: {]", optionDto.toString());
         List<List<InternalLectureDto>> fullList = timetableService.createTimetable(optionDto);
         List<List<InternalLectureDto>> subList = fullList.subList(0, Math.min(50, fullList.size()));
         return ApiResponse.onSuccess(subList);
     }
 
     @PatchMapping("/timetables/main")
-    public ApiResponse<Void> changeMainTimetable(@RequestBody TimetableIdDto timetableIdDto) {
-        log.info("{}번으로 메인 시간표 변경", timetableIdDto);
-        timetableService.changeMainTimetable(timetableIdDto);
+    public ApiResponse<Void> changeMainTimetable(@RequestBody TimetableIdRequest timetableIdRequest) {
+        timetableService.changeMainTimetable(timetableIdRequest);
         return ApiResponse.onSuccess(null);
     }
 
     @PostMapping("/timetables/compare-lecture")
-    public ApiResponse<List<CompareTimetableDto>> compareTimetable(@RequestBody CompareMemberDto compareMemberDto) {
-        log.info("겹치는 강의 비교");
-        return ApiResponse.onSuccess(timetableService.compareTimetable(compareMemberDto));
+    public ApiResponse<List<CompareTimetableDto>> compareTimetable(@RequestBody CompareTimetableRequest compareTimetableRequest) {
+        return ApiResponse.onSuccess(timetableService.compareTimetable(compareTimetableRequest));
     }
-
 
     @PostMapping("/timetables/compare-time")
-    public ApiResponse<List<InternalLectureDto>> compareFreeTime(@RequestBody CompareMemberDto compareMemberDto) {
-        log.info("겹치는 시간 비교");
-        return ApiResponse.onSuccess(timetableService.compareFreeTime(compareMemberDto));
+    public ApiResponse<List<InternalLectureDto>> compareFreeTime(@RequestBody CompareTimetableRequest compareTimetableRequest) {
+        return ApiResponse.onSuccess(timetableService.compareFreeTime(compareTimetableRequest));
     }
-
-//    @GetMapping("/everytime/categories")
-//    public ApiResponse<List<Category>> everytimeCategories(@RequestParam String year, @RequestParam String semester) {
-//        log.info("에브리타임에서 학과 다 가져오기");
-//        return ApiResponse.onSuccess(everytimeService.everytimeCategories(year, semester));
-//    }
-
-
-
-
-
 }
