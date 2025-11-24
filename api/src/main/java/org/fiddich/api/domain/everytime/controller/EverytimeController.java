@@ -22,7 +22,14 @@ public class EverytimeController {
 
     // 검색해서 강의 가져오기
     @GetMapping("/everytime/lectures/search")
-    public ApiResponse<List<InternalLectureDto>> searchEverytimeLectures(@RequestParam String type, @RequestParam String keyword, @RequestParam String year, @RequestParam String semester, @RequestParam int page, @RequestParam int size) {
+    public ApiResponse<List<InternalLectureDto>> searchEverytimeLectures(
+            @RequestParam String type,
+            @RequestParam String keyword,
+            @RequestParam String year,
+            @RequestParam String semester,
+            @RequestParam int page,
+            @RequestParam int size
+    ) {
         log.info("에브리타임에서 강의 검색");
         return ApiResponse.onSuccess(everytimeUtil.searchEverytimeLectures(type, keyword, year, semester, page, size));
     }

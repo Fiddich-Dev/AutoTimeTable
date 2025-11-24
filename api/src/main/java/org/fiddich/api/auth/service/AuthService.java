@@ -3,6 +3,7 @@ package org.fiddich.api.auth.service;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.fiddich.api.auth.dto.request.EmailRequest;
+import org.fiddich.api.auth.dto.request.VerifyAuthCodeRequest;
 import org.fiddich.api.auth.dto.response.ReissueResponse;
 import org.fiddich.coreinfradomain.domain.common.BaseErrorCode;
 import org.fiddich.coreinfraemail.EmailUtil;
@@ -23,13 +24,18 @@ public class AuthService {
     }
 
     public String sendAuthCode(EmailRequest emailRequest) throws Exception {
-        log.info("[*] Send email to {}", emailRequest.getEmail());
-        return emailUtil.sendEmail(emailRequest.getEmail());
+        log.info("[*] Send email to {}", emailRequest.email());
+        return emailUtil.sendEmail(emailRequest.email());
     }
 
-    public boolean verifyAuthCode(String email, String authCode) {
+    public boolean verifyAuthCode(VerifyAuthCodeRequest verifyAuthCodeRequest) {
+        String email = verifyAuthCodeRequest.email();
+        String authCode = verifyAuthCodeRequest.authCode();
         log.info("[*] email({}) verify with code {}", email, authCode);
-        return emailUtil.verifyAuthCode(email, authCode);
+        return emailUtil.verifyAuthCode(
+                verifyAuthCodeRequest.email(),
+                verifyAuthCodeRequest.authCode()
+        );
     }
 
 }

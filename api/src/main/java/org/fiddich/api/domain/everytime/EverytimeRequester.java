@@ -20,9 +20,9 @@ import java.util.Map;
 @Slf4j
 public class EverytimeRequester {
 
-    final static String campusId = "13";
+     private final static String campusId = "13";
 
-    // 모든 학과 가져오기 (상위학과 제외)
+    // 모든 학과 가져오기 (부모학과 제외)
     public static List<Category> findAllCategories(String year, String semester) throws IOException {
 
         Document doc =  Jsoup.connect("https://api.everytime.kr/find/timetable/subject/filter/list")

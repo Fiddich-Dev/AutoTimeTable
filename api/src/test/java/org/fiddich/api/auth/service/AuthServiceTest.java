@@ -6,6 +6,7 @@ import jakarta.persistence.EntityManager;
 import jakarta.transaction.Transactional;
 import org.assertj.core.api.Assertions;
 import org.fiddich.api.auth.dto.request.EmailRequest;
+import org.fiddich.api.auth.dto.request.VerifyAuthCodeRequest;
 import org.fiddich.api.auth.dto.response.ReissueResponse;
 import org.fiddich.api.domain.member.MemberService;
 import org.fiddich.api.domain.member.dto.request.SignUpRequest;
@@ -166,7 +167,7 @@ class AuthServiceTest {
         String email = "hiws99@naver.com";
         String authCode = authService.sendAuthCode(new EmailRequest(email));
         boolean isExist = redisUtil.getValue(email).equals(authCode);
-        Assertions.assertThat(authService.verifyAuthCode(email, authCode)).isTrue();
+        Assertions.assertThat(authService.verifyAuthCode(new VerifyAuthCodeRequest(email, authCode))).isTrue();
         Assertions.assertThat(isExist).isTrue();
     }
 

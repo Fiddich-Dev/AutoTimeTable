@@ -8,7 +8,6 @@ public record ReissueResponse(
         String access,
         String refresh
 ) {
-
     public static ReissueResponse from(JWTDto jwtDto) {
         return ReissueResponse.builder()
                 .access(jwtDto.getAccess())

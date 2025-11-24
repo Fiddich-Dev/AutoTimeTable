@@ -33,7 +33,7 @@ public class AuthController {
 
     @PostMapping("/mail/verify")
     public ApiResponse<Void> verifyAuthCode(@RequestBody VerifyAuthCodeRequest verifyAuthCodeRequest) {
-        boolean isValid = authService.verifyAuthCode(verifyAuthCodeRequest.getEmail(), verifyAuthCodeRequest.getAuthCode());
+        boolean isValid = authService.verifyAuthCode(verifyAuthCodeRequest);
         if (isValid) {
             return ApiResponse.onSuccess(null);
         } else {

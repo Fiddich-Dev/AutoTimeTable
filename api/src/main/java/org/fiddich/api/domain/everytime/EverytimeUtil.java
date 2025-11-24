@@ -14,7 +14,6 @@ import java.util.List;
 @Component
 public class EverytimeUtil {
 
-
     // 에타의 모든 시간표 가져오기(조회만)
     public List<CreateTimetableDto> allEverytimeMapping(String url) {
         try {
